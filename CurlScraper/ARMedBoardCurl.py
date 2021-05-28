@@ -10,8 +10,8 @@ class ARMedBoard:
     Method for transferring data via curl to the AR Med Board site
     """
     SITE_NAME = "ARMedBoard"
-    MAIN_PAGE = "https://www.walmart.com/"
-    LICENSE_SEARCH_URL = ""
+    MAIN_PAGE = "http://www.armedicalboard.org/Default.aspx"
+    LICENSE_SEARCH_URL = "http://www.armedicalboard.org/Public/verify/lookup.aspx?LicNum="
 
     def __init__(self, cookies_dict=None, curl_proxy=None):
         if not cookies_dict:
@@ -163,8 +163,8 @@ class ARMedBoard:
         """
 
         headers_dict = {
-            "authority": "www.walmart.com",
-            "sec-ch-ua": "'Google Chrome';v='88', 'Not;A Brand';v='99', 'Chromium';v='88'",
+            "Connection": "keep-alive",
+            # "sec-ch-ua": "'Google Chrome';v='88', 'Not;A Brand';v='99', 'Chromium';v='88'",
             "sec-ch-ua-mobile": "?0",
             "upgrade-insecure-requests": "1",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36",
@@ -179,7 +179,6 @@ class ARMedBoard:
         }
         return headers_dict
 
-
     def get_license_page(self, license_page_url, curl_proxy=None):
         """
         Gets details license page as html response
@@ -191,16 +190,15 @@ class ARMedBoard:
         else:
             proxy = self.curl_proxy
 
+
         headers_dict = self.get_site_request_headers()
 
         requester = CurlRequests(self.cookies_dict, headers_dict=headers_dict)
-        response = requester.send_curl_request(license_page_url, proxy=proxy)
+        response = requester.send_curl_request(license_page_url, proxy=proxy, page_redirects=True)
 
         return response
 
-
-
-    def get_license_info(self, license_page_url, curl_proxy=None):
+    def get_license_info(self, license_number, curl_proxy=None):
         """
         Gets the page response and then gets the item json from page response
         :param license_info_url:
@@ -213,8 +211,9 @@ class ARMedBoard:
         else:
             proxy = self.curl_proxy
 
-        license_info = {}
+        license_page_url = f"{self.LICENSE_SEARCH_URL}{license_number}"
 
+        license_info = {}
 
         page_html_response = self.get_license_page(license_page_url, proxy)
         page_html_response = page_html_response.get('response', str(page_html_response))
