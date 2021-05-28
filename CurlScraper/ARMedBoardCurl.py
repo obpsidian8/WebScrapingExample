@@ -185,7 +185,6 @@ class ARMedBoard:
         else:
             proxy = self.curl_proxy
 
-
         headers_dict = self.get_site_request_headers()
 
         requester = CurlRequests(self.cookies_dict, headers_dict=headers_dict)
@@ -213,14 +212,38 @@ class ARMedBoard:
         page_html_response = self.get_license_page(license_page_url, proxy)
         page_html_response = page_html_response.get('response', str(page_html_response))
 
-        id_name_list = []
+        field_names_regex = re.compile(r'<li>(.+?):\s*<span\s+id="ctl00_MainContentPlaceHolder_lvResults')
+        field_list = field_names_regex.findall(page_html_response)
+        group_index = 0
 
-    def info_regex_builder(self, field_name):
+        for field in field_list:
+            results = self.info_regex_builder(field, page_html_response, license_number, group_index)
+            field_value = results[0]
+            group_index = results[1]
+            license_info[field] = field_value
+
+        return license_info
+
+    def info_regex_builder(self, field_name, page_html_response, license_number, group_index):
         """
         Builds the regex expression for getting the license data
         """
-        base_license_info_regex_str = fr'{field_name}":\s*<span\s+id="ctl00_MainContentPlaceHolder.+?class="indent">(.+?)<'
+        base_license_info_regex_str = fr'{field_name}:\s*<span\s+id="ctl00_MainContentPlaceHolder.+?class="indent">(.+?)<'
         regex_compiled = re.compile(base_license_info_regex_str)
+        try:
+            field_value_list = regex_compiled.findall(page_html_response)
+            if field_name == "License Number":
+                # Need to get index of license_number. This will be the group index of the remaining license information
+                group_index = field_value_list.index(license_number)
+                value = field_value_list[group_index]
+            else:
+                value = field_value_list[group_index]
+        except:
+            print(f"ERROR: Could not extract field value of {field_name} from page source")
+            value = None
 
+        if value:
+            if "/span" in value:
+                value = None
 
-
+        return value, group_index
