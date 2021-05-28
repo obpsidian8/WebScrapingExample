@@ -195,12 +195,12 @@ class ARMedBoard:
 
     def get_license_info(self, license_number, curl_proxy=None):
         """
-        Gets the page response and then gets the item json from page response
+        Gets the page response and then gets the license json from page response
         :param license_number:
         :param curl_proxy:
         :return:
         """
-        print(f"\nINFO: GETTING ITEM INFO")
+        print(f"\nINFO: GETTING LICENSE INFO")
         if curl_proxy:
             proxy = curl_proxy
         else:
@@ -212,3 +212,15 @@ class ARMedBoard:
 
         page_html_response = self.get_license_page(license_page_url, proxy)
         page_html_response = page_html_response.get('response', str(page_html_response))
+
+        id_name_list = []
+
+    def info_regex_builder(self, field_name):
+        """
+        Builds the regex expression for getting the license data
+        """
+        base_license_info_regex_str = fr'{field_name}":\s*<span\s+id="ctl00_MainContentPlaceHolder.+?class="indent">(.+?)<'
+        regex_compiled = re.compile(base_license_info_regex_str)
+
+
+

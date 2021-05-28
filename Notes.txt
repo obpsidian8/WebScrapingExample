@@ -1,0 +1,8 @@
+Name:\s*<span\s+id="ctl00_MainContentPlaceHolder.+?class="indent">(.+?)<
+Primary Specialty:\s*<span\s+id="ctl00_MainContentPlaceHolder.+?class="indent">(.+?)<
+Mailing Address:\s*<span\s+id="ctl00_MainContentPlaceHolder.+?class="indent">(.+?)<
+Address 2:\s*<span\s+id="ctl00_MainContentPlaceHolder.+?class="indent">(.+?)<
+City:\s*<span\s+id="ctl00_MainContentPlaceHolder.+?class="indent">(.+?)<
+
+Field Names preceed 
+ctl00_MainContentPlaceHolder_lvResults
