@@ -165,16 +165,11 @@ class ARMedBoard:
         headers_dict = {
             "Connection": "keep-alive",
             # "sec-ch-ua": "'Google Chrome';v='88', 'Not;A Brand';v='99', 'Chromium';v='88'",
-            "sec-ch-ua-mobile": "?0",
+            "Cache-Control": "max-age=0",
             "upgrade-insecure-requests": "1",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36",
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-            "content-type": "application/json; charset=UTF-8",
-            "origin": "https://www.Walmart.com",
-            "sec-fetch-site": "none",
-            "sec-fetch-mode": "navigate",
-            "sec-fetch-user": "?1",
-            "sec-fetch-dest": "document",
+            "referer": "http://www.armedicalboard.org/public/verify/default.aspx",
             "accept-language": "en-US,en;q=0.9"
         }
         return headers_dict
@@ -201,7 +196,7 @@ class ARMedBoard:
     def get_license_info(self, license_number, curl_proxy=None):
         """
         Gets the page response and then gets the item json from page response
-        :param license_info_url:
+        :param license_number:
         :param curl_proxy:
         :return:
         """
