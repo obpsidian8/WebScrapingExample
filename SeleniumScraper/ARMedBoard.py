@@ -37,6 +37,9 @@ class ARMedboardSeleniumScraper:
             group_index = results[1]
             license_info[field] = field_value
 
+        license_info["Board Minutes"] = self.navigator.get_element_text(xpath="//span[contains(@id, 'ctl00_MainContentPlaceHolder_lblBoardMin')]")
+        license_info["Board Orders"] = self.navigator.get_element_text(xpath="//span[contains(@id, 'ctl00_MainContentPlaceHolder_lblBoardAction')]")
+
         return license_info
 
     def xpath_builder(self, field_name, license_number, group_index):

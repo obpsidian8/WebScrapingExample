@@ -115,46 +115,6 @@ class ARMedBoard:
         print(f"\nINFO: Cookies found from site response+ merge with passed in ones\n\t{json.dumps(self.cookies_dict, indent=2)}")
         self.save_cookie_to_disk(self.cookies_dict)
 
-    def extract_json_from_site_response(self, response):
-        """
-        Extracts JSON from complete response information from server
-        Use only when the response from the server is the response headers and JSON (Not when response is html with embedded JSON)
-        :param response:
-        :return:
-        """
-        print(f"\nINFO: EXTRACTING JSON FROM SITE RESPONSE")
-        response = str(response)
-        json_payload_regex = re.compile(r'({[\s\S]*?"\w+[\s\S]+)')
-        try:
-            json_response = json_payload_regex.search(response).group(1)
-            json_response = json.loads(json_response)
-            print(f"INFO: JSON response found")
-        except Exception as e:
-            json_response = {}
-            print(f"ERROR: Could not get JSON response. DETAILS: {e}")
-        print(json.dumps(json_response, indent=2))
-
-        return json_response
-
-    def extract_embeded_json_from_html(self, response, tag_id_name):
-        """
-        Used to extract json embeded in script tags in html
-        :param response:
-        :return:
-        """
-        print(f"\nINFO: EXTRACTING JSON ENCLOSED WITHIN ID TAG {tag_id_name}")
-        info_json_regex = re.compile(fr'<script\s+id="{tag_id_name}".+?type="application/json">([\s\S]*?)</script>')
-        try:
-            info_json = info_json_regex.search(str(response)).group(1)
-            info_json = info_json.replace('\\"', '')
-            info_json = info_json.replace('\\', '')
-            info_json = json.loads(info_json)
-            print(f"\nINFO: JSON found for {tag_id_name}")
-        except Exception as e:
-            print(f"ERROR: Could not extract info JSON. DETAILS {e}")
-            info_json = {}
-
-        return info_json
 
     def get_site_request_headers(self):
         """
@@ -221,6 +181,20 @@ class ARMedBoard:
             field_value = results[0]
             group_index = results[1]
             license_info[field] = field_value
+
+
+        board_minutes_regex = re.compile(r'"ctl00_MainContentPlaceHolder_lblBoardMinutes">(.+?)</')
+        board_orders_regex = re.compile(r'"ctl00_MainContentPlaceHolder_lblBoardActions">(.+?)</')
+
+        try:
+            license_info["Board Minutes"] = board_minutes_regex.search(page_html_response).group(1)
+        except:
+            print(f"ERROR: Could not extract Board minutes using this regex")
+
+        try:
+            license_info["Board Orders"] = board_orders_regex.search(page_html_response).group(1)
+        except:
+            print(f"ERROR: Could not extract Board minutes using this regex")
 
         return license_info
 
