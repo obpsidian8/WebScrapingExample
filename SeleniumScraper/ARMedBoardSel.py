@@ -68,7 +68,7 @@ class ARMedboardSeleniumScraper:
 
         return value, group_index
 
-    def get_all_licenses(self, license_type):
+    def get_all_licenses(self, license_type, page_limit=None):
         """
         Gets all licenses of a specified type from the page
         :param license_type:
@@ -81,3 +81,29 @@ class ARMedboardSeleniumScraper:
         self.navigator.click_element(xpath=license_type_xpath)
         self.navigator.click_element(xpath=search_button_xpath)
         self.navigator.check_page_loaded(page_load_xpath="(//span[contains(text(),'Filtered Results')])")
+
+        # Start navigating through the pages
+
+        next_view = True
+        asmb_id_regex = re.compile(r'PHIDNO=(.+?)"')
+        asmb_id_list = []
+        base_xpath_for_result = "(//a[contains(@href, '.aspx?PHIDNO')])"
+        xpath_for_page_nums = "//a[contains(@href, 'ctl00$MainContentPlaceHolder$gvLookup')]"
+
+        while next_view:
+            # Get all pages in current view
+            numpages = self.navigator.get_number_of_elements(xpath=xpath_for_page_nums)
+            for page in range(numpages+1):
+                xpath_current_page = f"{xpath_for_page_nums}[{page}]"
+                self.navigator.click_element(xpath=xpath_current_page)
+                # Find number of results in current page
+                num_results = self.navigator.get_number_of_elements(xpath=base_xpath_for_result)
+                for idx in range(1, num_results+1):
+                    current_result_xpath = f"{base_xpath_for_result}[{idx}]"
+                    ele = self.navigator.getElementAttributeAsText(xpath=current_result_xpath, attribute_name="href")
+                    try:
+                        asmb_id = asmb_id_regex.search(ele).group(1)
+                        print(f"INFO: Found ASMB Id: {asmb_id}")
+                        asmb_id_list.append(asmb_id)
+                    except:
+                        print("ERROR: Could not get ASMB Id from element")
