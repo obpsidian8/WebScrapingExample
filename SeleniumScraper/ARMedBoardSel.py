@@ -42,6 +42,8 @@ class ARMedboardSeleniumScraper:
         license_info["Board Minutes"] = self.navigator.get_element_text(xpath="//span[contains(@id, 'ctl00_MainContentPlaceHolder_lblBoardMin')]")
         license_info["Board Orders"] = self.navigator.get_element_text(xpath="//span[contains(@id, 'ctl00_MainContentPlaceHolder_lblBoardAction')]")
 
+        self.driver.close()
+        self.driver.quit()
         return license_info
 
     def xpath_builder(self, field_name, license_number, group_index):
@@ -70,35 +72,44 @@ class ARMedboardSeleniumScraper:
 
     def get_all_licenses(self, license_type, page_limit=None):
         """
-        Gets all licenses of a specified type from the page
+        Gets all ASMB Ids of a specified type from the page
         :param license_type:
         :return:
         """
         license_type_xpath = f"//option[@value='{license_type}']"
         search_button_xpath = "(//input[contains(@name,'DirSearch') and @value='Search'])"
+
         self.navigator.get_page(url=self.DIRECTORY_SEARCH_PAGE)
         self.navigator.check_page_loaded(page_load_xpath="(//h2[contains(text(),'Advanced Directory Search')])")
-        self.navigator.click_element(xpath=license_type_xpath)
-        self.navigator.click_element(xpath=search_button_xpath)
-        self.navigator.check_page_loaded(page_load_xpath="(//span[contains(text(),'Filtered Results')])")
+        self.navigator.click_element(xpath=license_type_xpath)  # Click on the license type
+
+        # Check if search button is loaded
+        self.navigator.check_page_loaded(page_load_xpath=search_button_xpath)
+        self.navigator.click_element(xpath=search_button_xpath)  # Click on the search button, after verifying that its loaded.
+
+        results_loaded_xpath = "(//table[contains(@id, 'ctl00_MainContentPlaceHolder_gvLookup')])"
+        self.navigator.check_page_loaded(page_load_xpath=results_loaded_xpath)
 
         # Start navigating through the pages
 
         next_view = True
-        asmb_id_regex = re.compile(r'PHIDNO=(.+?)"')
+        current_view = 1
+        asmb_id_regex = re.compile(r'PHIDNO=(ASMB\d+)')
         asmb_id_list = []
+
         base_xpath_for_result = "(//a[contains(@href, '.aspx?PHIDNO')])"
-        xpath_for_page_nums = "//a[contains(@href, 'ctl00$MainContentPlaceHolder$gvLookup')]"
+        xpath_for_page_nums = "( //a[contains(@href, 'ctl00$MainContentPlaceHolder$gvLookup') and not(contains(text(), '..'))])"  # Xpath for each page within the current view(when combined with [])
 
         while next_view:
             # Get all pages in current view
-            numpages = self.navigator.get_number_of_elements(xpath=xpath_for_page_nums)
-            for page in range(numpages+1):
+            numpages = self.navigator.get_number_of_elements(xpath=xpath_for_page_nums, time_delay=0.5)
+            for page in range(numpages + 1):
                 xpath_current_page = f"{xpath_for_page_nums}[{page}]"
                 self.navigator.click_element(xpath=xpath_current_page)
+                self.navigator.check_page_loaded(page_load_xpath=results_loaded_xpath)
                 # Find number of results in current page
-                num_results = self.navigator.get_number_of_elements(xpath=base_xpath_for_result)
-                for idx in range(1, num_results+1):
+                num_results = self.navigator.get_number_of_elements(xpath=base_xpath_for_result, time_delay=0.5)
+                for idx in range(1, num_results + 1):
                     current_result_xpath = f"{base_xpath_for_result}[{idx}]"
                     ele = self.navigator.getElementAttributeAsText(xpath=current_result_xpath, attribute_name="href")
                     try:
@@ -107,3 +118,32 @@ class ARMedboardSeleniumScraper:
                         asmb_id_list.append(asmb_id)
                     except:
                         print("ERROR: Could not get ASMB Id from element")
+
+                print(f"INFO: Number of results found after scraping current page (page {page + 1}) {len(asmb_id_list)}")
+
+            # Click on next view
+            print(f"INFO: {len(asmb_id_list)} ASMB ids found so far after scraping all {numpages} pages in current view."
+                  f"\n\t{asmb_id_list}. Going to next view (set of pages)")
+
+            next_view_xpath_base = "(//a[contains(@href, 'ctl00$MainContentPlaceHolder$gvLookup') and contains(text(), '...')])"
+            num_view_buttons = self.navigator.get_number_of_elements(xpath=next_view_xpath_base)
+
+            if current_view == 1:
+                next_view_xpath = f"{next_view_xpath_base}[{1}]"
+                # THis condition is met only on the first set of pages. There is only one next view button to click here
+
+            else:
+                next_view_xpath = f"{next_view_xpath_base}[{2}]"
+                # This condition is met on all views other than the first one
+
+            next_view = self.navigator.find_presence_of_element(xpath=next_view_xpath)  # True or False
+            if next_view:
+                self.navigator.click_element(xpath=next_view_xpath)
+                self.navigator.check_page_loaded(page_load_xpath=results_loaded_xpath)
+
+            current_view = current_view + 1
+
+
+        self.driver.close()
+        self.driver.quit()
+        return asmb_id_list
