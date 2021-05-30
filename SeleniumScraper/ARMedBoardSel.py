@@ -6,23 +6,25 @@ class ARMedboardSeleniumScraper:
     SITE_NAME = "ARMedBoard"
     MAIN_PAGE = "http://www.armedicalboard.org/Default.aspx"
     LICENSE_SEARCH_URL = "http://www.armedicalboard.org/Public/verify/lookup.aspx?LicNum="
+    ASMB_ID_SEARCH_URL = "http://www.armedicalboard.org/Public/verify/results.aspx?strPHIDNO="
+    DIRECTORY_SEARCH_PAGE = "http://www.armedicalboard.org/public/directory/AdvancedDirectorySearch.aspx"
 
     def __init__(self):
         self.driver = get_chrome_driver(dataDirName=self.SITE_NAME)
         self.navigator = SelemiumPageNavigetor(self.driver)
 
-    def get_page(self, license_number):
-        """
-        Gets the page for scraping
-        """
-        license_page_url = f"{self.LICENSE_SEARCH_URL}{license_number}"
-        self.navigator.get_page(url=license_page_url)
-
-    def scrape_page(self, license_number):
+    def get_license_details(self, license_number):
         """
         Scrapes the page using xpath
         """
-        self.get_page(license_number)
+
+        if "ASMB" in license_number:
+            license_page_url = f"{self.ASMB_ID_SEARCH_URL}{license_number}"
+        else:
+            license_page_url = f"{self.LICENSE_SEARCH_URL}{license_number}"
+
+        self.navigator.get_page(url=license_page_url)
+
         license_info = {}
 
         page_source = self.navigator.get_page_source()
@@ -65,3 +67,17 @@ class ARMedboardSeleniumScraper:
                         group_index = idx
 
         return value, group_index
+
+    def get_all_licenses(self, license_type):
+        """
+        Gets all licenses of a specified type from the page
+        :param license_type:
+        :return:
+        """
+        license_type_xpath = f"//option[@value='{license_type}']"
+        search_button_xpath = "(//input[contains(@name,'DirSearch') and @value='Search'])"
+        self.navigator.get_page(url=self.DIRECTORY_SEARCH_PAGE)
+        self.navigator.check_page_loaded(page_load_xpath="(//h2[contains(text(),'Advanced Directory Search')])")
+        self.navigator.click_element(xpath=license_type_xpath)
+        self.navigator.click_element(xpath=search_button_xpath)
+        self.navigator.check_page_loaded(page_load_xpath="(//span[contains(text(),'Filtered Results')])")

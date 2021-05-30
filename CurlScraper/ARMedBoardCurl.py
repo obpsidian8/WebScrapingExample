@@ -12,6 +12,7 @@ class ARMedBoard:
     SITE_NAME = "ARMedBoard"
     MAIN_PAGE = "http://www.armedicalboard.org/Default.aspx"
     LICENSE_SEARCH_URL = "http://www.armedicalboard.org/Public/verify/lookup.aspx?LicNum="
+    ASMB_ID_SEARCH_URL = "http://www.armedicalboard.org/Public/verify/results.aspx?strPHIDNO="
 
     def __init__(self, cookies_dict=None, curl_proxy=None):
         if not cookies_dict:
@@ -159,13 +160,19 @@ class ARMedBoard:
         :param curl_proxy:
         :return:
         """
+
+        # Do check to see if license number supplied is an actual license number or an ASMB id
+        # Determine query url based on that
+        if "ASMB" in license_number:
+            license_page_url = f"{self.ASMB_ID_SEARCH_URL}{license_number}"
+        else:
+            license_page_url = f"{self.LICENSE_SEARCH_URL}{license_number}"
+
         print(f"\nINFO: GETTING LICENSE INFO")
         if curl_proxy:
             proxy = curl_proxy
         else:
             proxy = self.curl_proxy
-
-        license_page_url = f"{self.LICENSE_SEARCH_URL}{license_number}"
 
         license_info = {}
 
@@ -221,3 +228,11 @@ class ARMedBoard:
                 value = None
 
         return value, group_index
+
+
+    def get_all_licenses(self, license_type):
+        """
+        Gets all licenses of a specified type from the page
+        :param license_type:
+        :return:
+        """
