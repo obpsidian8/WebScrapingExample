@@ -72,7 +72,7 @@ class PALSSeleniumScraper:
                     print(f"ERROR: License type Id for {license_type}. DETAILS: {e}")
 
         info_id["professionID"] = professionID
-        info_id["licenseTypeID"] = licenseTypeID
+        info_id["licenseTypeId"] = licenseTypeID
 
         cookies_dict = self.navigator.get_curl_formatted_cookies_from_browser()
         self.save_cookie_to_disk(cookies_dict)

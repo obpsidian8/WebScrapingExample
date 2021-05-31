@@ -146,7 +146,7 @@ class PALS:
         :param licenseTypeId: Ontained from the "License Type drop down of the search page. This field are only populated after the first drop down is selected"
         :return:
         """
-        data = f'{{"OptPersonFacility":"Person","ProfessionID":{professionID},"LicenseTypeId":{licenseTypeId},"State":"","Country":"ALL","County":null,"IsFacility":0,"PersonId":null,"PageNo":1}}'
+        data = f'\'{{"OptPersonFacility":"Person","ProfessionID":{professionID},"LicenseTypeId":{licenseTypeId},"State":"","Country":"ALL","County":null,"IsFacility":0,"PersonId":null,"PageNo":1}}\''
         return data
 
     def _data_for_single_license_details(self, personId, licenseNumber, licenseId):
@@ -157,7 +157,7 @@ class PALS:
         :param licenseId:
         :return:
         """
-        data = f'{{"PersonId":"{personId}","LicenseNumber":"{licenseNumber}","IsFacility":"0","LicenseId":"{licenseId}"}}'
+        data = f'\'{{"PersonId":"{personId}","LicenseNumber":"{licenseNumber}","IsFacility":"0","LicenseId":"{licenseId}"}}\''
         return data
 
     def _get_all_licenses_summaries(self, professionID, licenseTypeId, curl_proxy=None):
@@ -176,7 +176,7 @@ class PALS:
         requester = CurlRequests(self.cookies_dict, headers_dict=headers_dict)
         data = self._request_body_data_for_group_requests(professionID, licenseTypeId)
 
-        licenses_list = requester.send_curl_request(request_url=self.BULK_LICENSE_SEARCH_URL, proxy=proxy, form_data=data, specified_method='POST')
+        licenses_list = requester.send_curl_request(request_url=self.BULK_LICENSE_SEARCH_URL, proxy=proxy, form_data=data, specified_method='POST', shell_needed=True)
         # Returns a list of JSON entries representing each licensed person
         # The responses here don't have all the details, so have to us another method to get the details
         # Each entry has three attributes that are used to get the details (PersonId, LicenseNumber, LicenseId)
