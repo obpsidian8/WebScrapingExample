@@ -2,6 +2,7 @@ import os
 import re
 import json
 import pickle
+from urllib.parse import quote_plus
 from CurlScraper.CoreLibrary.PyCurlRequest import CurlRequests
 
 
@@ -12,6 +13,7 @@ class DCHealth:
     SITE_NAME = "DCHealth"
     MAIN_PAGE = "https://doh.force.com/ver/s/"
     LICENSE_SEARCH_URL = "https://doh.force.com/ver/s/sfsites/aura?r=5&other.SearchComponent.searchRecords=1&other.SearchComponent.searchRecordsCount=1"
+    DIRECTORY_SEARCH_PAGE = "https://doh.force.com/ver/s/sfsites/aura?r=1&other.SearchComponent.searchRemainingRecords=1"
 
     def __init__(self, cookies_dict=None, curl_proxy=None):
         if not cookies_dict:
@@ -124,7 +126,6 @@ class DCHealth:
         headers_dict = {
             "Connection": "keep-alive",
             "sec-ch-ua": "'Google Chrome';v='88', 'Not;A Brand';v='99', 'Chromium';v='88'",
-            "Cache-Control": "max-age=0",
             "sec-ch-ua-mobile": "?0",
             "X-SFDC-Page-Scope-Id": "d60d7bee-0377-4642-8c07-526a71a8f78d",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36",
@@ -142,7 +143,7 @@ class DCHealth:
 
     def get_license_info(self, license_number, curl_proxy=None):
         """
-        Gets details license page as html response
+        Gets details license for license specified
         :return:
         """
         license_info = {}
@@ -161,8 +162,17 @@ class DCHealth:
 
         actions = response.get("actions")
         if actions:
-            if len(actions) > 1:
+            if len(actions) > 0:
                 user_info = actions[1]
+                state = user_info.get("state")
+                print(f"INFO: Request state: {state}")
+                if state == "ERROR":
+                    errors = user_info.get("error")
+                    if len(errors) > 0:
+                        error = errors[0]
+                        print(f"ERROR: Request did not complete. DETAILS: {error}")
+                        return license_info
+
                 returnValue = user_info.get("returnValue")
                 if len(returnValue) > 0:
                     for key, value in returnValue[0].items():
@@ -179,3 +189,69 @@ class DCHealth:
         """
         data = f"message=%7B%22actions%22%3A%5B%7B%22id%22%3A%22138%3Ba%22%2C%22descriptor%22%3A%22apex%3A%2F%2FSearchComponentController%2FACTION%24searchRecordsCount%22%2C%22callingDescriptor%22%3A%22markup%3A%2F%2Fc%3ASearchComponent%22%2C%22params%22%3A%7B%22Profession%22%3A%220%22%2C%22LicenseType%22%3A%220%22%2C%22FirstName%22%3A%22%22%2C%22LastName%22%3A%22%22%2C%22LicenseNumber%22%3A%22{license_number}%22%2C%22SSN%22%3A%22%22%2C%22Status%22%3A%220%22%7D%7D%2C%7B%22id%22%3A%22139%3Ba%22%2C%22descriptor%22%3A%22apex%3A%2F%2FSearchComponentController%2FACTION%24searchRecords%22%2C%22callingDescriptor%22%3A%22markup%3A%2F%2Fc%3ASearchComponent%22%2C%22params%22%3A%7B%22Profession%22%3A%220%22%2C%22LicenseType%22%3A%220%22%2C%22FirstName%22%3A%22%22%2C%22LastName%22%3A%22%22%2C%22LicenseNumber%22%3A%22{license_number}%22%2C%22SSN%22%3A%22%22%2C%22Status%22%3A%220%22%7D%7D%5D%7D&aura.context=%7B%22mode%22%3A%22PROD%22%2C%22fwuid%22%3A%22Q8onN6EmJyGRC51_NSPc2A%22%2C%22app%22%3A%22siteforce%3AcommunityApp%22%2C%22loaded%22%3A%7B%22APPLICATION%40markup%3A%2F%2Fsiteforce%3AcommunityApp%22%3A%22zaAlQavgK5QD4CF76KJj6A%22%7D%2C%22dn%22%3A%5B%5D%2C%22globals%22%3A%7B%7D%2C%22uad%22%3Afalse%7D&aura.pageURI=%2Fver%2Fs%2F&aura.token=undefined"
         return data
+
+    def get_search_data(self, license_type, offsetCnt):
+        """
+        Forms data portion of request for querying all records in the website
+        :param license_type:
+        :param offsetCnt:
+        :return:
+        """
+        license_type = quote_plus(license_type)
+        data = f'message=%7B%22actions%22%3A%5B%7B%22id%22%3A%22187%3Ba%22%2C%22descriptor%22%3A%22apex%3A%2F%2FSearchComponentController%2FACTION%24searchRemainingRecords%22%2C%22callingDescriptor%22%3A%22markup%3A%2F%2Fc%3APageCount%22%2C%22params%22%3A%7B%22Profession%22%3A%220%22%2C%22LicenseType%22%3A%22{license_type}%22%2C%22FirstName%22%3A%22%22%2C%22LastName%22%3A%22%22%2C%22LicenseNumber%22%3A%22%22%2C%22SSN%22%3A%22%22%2C%22Status%22%3A%220%22%2C%22offsetCnt%22%3A%22{offsetCnt}%22%7D%2C%22version%22%3Anull%7D%5D%7D&aura.context=%7B%22mode%22%3A%22PROD%22%2C%22fwuid%22%3A%22Q8onN6EmJyGRC51_NSPc2A%22%2C%22app%22%3A%22siteforce%3AcommunityApp%22%2C%22loaded%22%3A%7B%22APPLICATION%40markup%3A%2F%2Fsiteforce%3AcommunityApp%22%3A%22zaAlQavgK5QD4CF76KJj6A%22%7D%2C%22dn%22%3A%5B%5D%2C%22globals%22%3A%7B%7D%2C%22uad%22%3Afalse%7D&aura.pageURI=%2Fver%2Fs%2F&aura.token=undefined'
+        return data
+
+    def get_all_licenses(self, license_type, curl_proxy=None, page_limit=None):
+        """
+        Gets all the licenses available on the site
+        :param license_type:
+        :param page_limit:
+        :return:
+        """
+        licenses_list = []
+        if curl_proxy:
+            proxy = curl_proxy
+        else:
+            proxy = self.curl_proxy
+
+        headers_dict = self.get_site_request_headers()
+
+        error_state = False
+
+        offsetCnt = 0
+        while error_state is False:
+            requester = CurlRequests(self.cookies_dict, headers_dict=headers_dict)
+            data = self.get_search_data(license_type, offsetCnt)
+
+            response = requester.send_curl_request(self.DIRECTORY_SEARCH_PAGE, proxy=proxy, page_redirects=True, form_data=data)
+            actions = response.get("actions")
+            if actions:
+                if len(actions) > 0:
+                    user_info = actions[0]
+                    state = user_info.get("state")
+                    print(f"INFO: Request state: {state}")
+                    if state == "ERROR":
+                        errors = user_info.get("error")
+                        if len(errors) > 0:
+                            error = errors[0]
+                            print(f"ERROR: Request did not complete. DETAILS: {error}")
+                            error_state = True
+                    else:
+                        print(f"INFO: STATE: {state}")  # Success state
+                        returnValue = user_info.get("returnValue")  # List of the results of the query
+                        if len(returnValue) > 0:
+                            # Iterate through all the return values on this case
+                            for record in returnValue:
+                                # Cleaning up the records before adding to the main list
+                                license_info = {}
+                                for key, value in record.items():
+                                    key = key.replace("__c", "")
+                                    license_info[key] = value
+                                licenses_list.append(license_info)
+                                print(json.dumps(license_info, indent=2))
+
+            print(f"INFO: Number of results found after scraping current offset ({offsetCnt}) {len(licenses_list)}")
+            offsetCnt = offsetCnt + 25
+
+        print(f"\nINFO: Total number of results {offsetCnt}")
+        return licenses_list
