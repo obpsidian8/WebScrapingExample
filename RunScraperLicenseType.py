@@ -1,5 +1,7 @@
 from CurlScraper.ARMedBoardCurl import ARMedBoard
 from CurlScraper.DCHealthCurl import DCHealth
+from CurlScraper.PALicensingCurl import PALS
+from SeleniumScraper.PALicensingSel import PALSSeleniumScraper
 from SeleniumScraper.ARMedBoardSel import ARMedboardSeleniumScraper
 import json
 
@@ -49,6 +51,28 @@ def get_dchealth_dataset(method="c", license_type="PHYSICAL THERAPIST"):
         print(json.dumps(license_details_list, indent=2))
 
 
+def get_pals_dataset(method="c",board_or_commission="State Board of Pharmacy", license_type="Pharmacist", ):
+    """
+    Gets dataset of all licenses of supplied type from the site
+    :param method:
+    :param license_type: license type
+    :param board_or_commission: board that license type belongs to
+    :return:
+    """
+    # The license type and board.commission values are supplied
+    # These need to be convereted to the corresponding codes/Ids
+    # This will be done from the browser
+    pals_sel = PALSSeleniumScraper()
+    info_id = pals_sel.get_board_and_licence_type_codes(board_or_commission=board_or_commission, license_type=license_type)
+    professionID = info_id.get("professionID")
+    licenseTypeId = info_id.get("licenseTypeId")
+
+    if method == "c":
+        pals_curl = PALS(cookies_dict=None)
+        license_details_list = pals_curl.get_all_license_details_for_type(professionID=professionID, licenseTypeId=licenseTypeId)
+        print(json.dumps(license_details_list, indent=2))
+
+
 def scrape_armedboard(method="c", license_num="PA-130"):
     """
     Get details for a single license supplied from AR MED Board
@@ -84,8 +108,9 @@ def scrape_dc_health(method="c", license_num="PT870062"):
 
 
 if __name__ == "__main__":
+    get_pals_dataset()
     # get_dchealth_dataset()
-    get_ar_med_dataset()
+    # get_ar_med_dataset()
 
     # scrape_dc_health("c")
     # scrape_armedboard("c")

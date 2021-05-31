@@ -9,8 +9,8 @@ class PALS:
     """
     Method for transferring data via curl to the AR Med Board site
     """
-    SITE_NAME = "PALS"
-    MAIN_PAGE = "https://www.pals.pa.gov/#/page/default"
+    SITE_NAME = "PALicensingSystem"
+    MAIN_PAGE = "https://www.pals.pa.gov/"
     BULK_LICENSE_SEARCH_URL = "https://www.pals.pa.gov/api/Search/SearchForPersonOrFacilty"
     LICENSE_DETAILS_URL = "https://www.pals.pa.gov/api/SearchLoggedIn/GetPersonOrFacilityDetails"
 
@@ -75,7 +75,7 @@ class PALS:
             print(f"\nINFO: Cookies found from disk + merge with passed in ones\n\t{json.dumps(self.cookies_dict, indent=2)}")
 
         # This process will get cookies from site and add in the new values to the self.cookies dict from init (which may be empty or contain some key-value pairs)
-        headers_dict = self.get_site_request_headers()
+        headers_dict = self._get_site_request_headers()
         curl = CurlRequests(cookies_dict=self.cookies_dict, headers_dict=headers_dict)
         response = curl.send_curl_request(request_url=self.MAIN_PAGE, page_redirects=True, include=True, proxy=proxy)
         self.add_cookies_from_site_response(response)
@@ -116,7 +116,7 @@ class PALS:
         print(f"\nINFO: Cookies found from site response+ merge with passed in ones\n\t{json.dumps(self.cookies_dict, indent=2)}")
         self.save_cookie_to_disk(self.cookies_dict)
 
-    def get_site_request_headers(self):
+    def _get_site_request_headers(self):
         """
         Defines and returns curl_headers for requests.
         :return: dictionary of curl_headers
@@ -139,7 +139,7 @@ class PALS:
         }
         return headers_dict
 
-    def request_body_data_for_group_requests(self, professionID, licenseTypeId):
+    def _request_body_data_for_group_requests(self, professionID, licenseTypeId):
         """
         Forms the data portion of the request for getting license info
         :param professionID: Obtained from the "Board/Commission" drp down of the search page
@@ -149,7 +149,7 @@ class PALS:
         data = f'{{"OptPersonFacility":"Person","ProfessionID":{professionID},"LicenseTypeId":{licenseTypeId},"State":"","Country":"ALL","County":null,"IsFacility":0,"PersonId":null,"PageNo":1}}'
         return data
 
-    def data_for_single_license_details(self, personId, licenseNumber, licenseId):
+    def _data_for_single_license_details(self, personId, licenseNumber, licenseId):
         """
         Gets the data portion of the request for geetting license info
         :param personId:
@@ -160,100 +160,7 @@ class PALS:
         data = f'{{"PersonId":"{personId}","LicenseNumber":"{licenseNumber}","IsFacility":"0","LicenseId":"{licenseId}"}}'
         return data
 
-    def get_license_page(self, license_page_url, curl_proxy=None):
-        """
-        Gets details license page as html response
-        :return:
-        """
-        print(f"\nINFO: GETTING LICENSE PAGE FROM SERVER")
-        if curl_proxy:
-            proxy = curl_proxy
-        else:
-            proxy = self.curl_proxy
-
-        headers_dict = self.get_site_request_headers()
-
-        requester = CurlRequests(self.cookies_dict, headers_dict=headers_dict)
-        response = requester.send_curl_request(license_page_url, proxy=proxy, page_redirects=True)
-
-        return response
-
-    def get_license_info(self, license_number, curl_proxy=None):
-        """
-        Gets the page response and then gets the license json from page response
-        :param license_number:
-        :param curl_proxy:
-        :return:
-        """
-
-        # Do check to see if license number supplied is an actual license number or an ASMB id
-        # Determine query url based on that
-        if "ASMB" in license_number:
-            license_page_url = f"{self.ASMB_ID_SEARCH_URL}{license_number}"
-        else:
-            license_page_url = f"{self.BULK_LICENSE_SEARCH_URL}{license_number}"
-
-        print(f"\nINFO: GETTING LICENSE INFO")
-        if curl_proxy:
-            proxy = curl_proxy
-        else:
-            proxy = self.curl_proxy
-
-        license_info = {}
-
-        page_html_response = self.get_license_page(license_page_url, proxy)
-        page_html_response = page_html_response.get('response', str(page_html_response))
-
-        field_names_regex = re.compile(r'<li>(.+?):\s*<span\s+id="ctl00_MainContentPlaceHolder_lvResults')
-        field_list = field_names_regex.findall(page_html_response)
-        group_index = 0
-
-        for field in field_list:
-            results = self.info_regex_builder(field, page_html_response, license_number, group_index)
-            field_value = results[0]
-            group_index = results[1]
-            license_info[field] = field_value
-
-        board_minutes_regex = re.compile(r'"ctl00_MainContentPlaceHolder_lblBoardMinutes">(.+?)</')
-        board_orders_regex = re.compile(r'"ctl00_MainContentPlaceHolder_lblBoardActions">(.+?)</')
-
-        try:
-            license_info["Board Minutes"] = board_minutes_regex.search(page_html_response).group(1)
-        except:
-            print(f"ERROR: Could not extract Board minutes using this regex")
-
-        try:
-            license_info["Board Orders"] = board_orders_regex.search(page_html_response).group(1)
-        except:
-            print(f"ERROR: Could not extract Board minutes using this regex")
-
-        return license_info
-
-    def info_regex_builder(self, field_name, page_html_response, license_number, group_index):
-        """
-        Builds the regex expression for getting the license data
-        """
-        base_license_info_regex_str = fr'{field_name}:\s*<span\s+id="ctl00_MainContentPlaceHolder.+?class="indent">(.+?)<'
-        regex_compiled = re.compile(base_license_info_regex_str)
-        try:
-            field_value_list = regex_compiled.findall(page_html_response)
-            if field_name == "License Number":
-                # Need to get index of license_number. This will be the group index of the remaining license information
-                group_index = field_value_list.index(license_number)
-                value = field_value_list[group_index]
-            else:
-                value = field_value_list[group_index]
-        except:
-            print(f"ERROR: Could not extract field value of {field_name} from page source")
-            value = None
-
-        if value:
-            if "/span" in value:
-                value = None
-
-        return value, group_index
-
-    def get_all_licenses_summaries(self, professionID, licenseTypeId, curl_proxy=None):
+    def _get_all_licenses_summaries(self, professionID, licenseTypeId, curl_proxy=None):
         """
         Gets all licenses of a specified type from the page
         :param license_type:
@@ -264,10 +171,10 @@ class PALS:
         else:
             proxy = self.curl_proxy
 
-        headers_dict = self.get_site_request_headers()
+        headers_dict = self._get_site_request_headers()
 
         requester = CurlRequests(self.cookies_dict, headers_dict=headers_dict)
-        data = self.request_body_data_for_group_requests(professionID, licenseTypeId)
+        data = self._request_body_data_for_group_requests(professionID, licenseTypeId)
 
         licenses_list = requester.send_curl_request(request_url=self.BULK_LICENSE_SEARCH_URL, proxy=proxy, form_data=data, specified_method='POST')
         # Returns a list of JSON entries representing each licensed person
@@ -279,6 +186,7 @@ class PALS:
     def get_all_license_details_for_type(self, professionID, licenseTypeId, curl_proxy=None):
         """
         Returns a list of the license details
+        Glue that ties get_all_licenses_summaries and get_license_details together
         First, use methond to get all the license details summary based on the supplied paramaters
         2nd get the details of each one and append to the license_details_list
         :param professionID:
@@ -287,19 +195,18 @@ class PALS:
         :return:license_details_list: List of detials
         """
         license_details_list = []
-        licenses_summaries_list = self.get_all_licenses_summaries(professionID, licenseTypeId, curl_proxy)
+        licenses_summaries_list = self._get_all_licenses_summaries(professionID, licenseTypeId, curl_proxy)
         for license_summary in licenses_summaries_list:
             licenseNumber = license_summary.get("LicenseNumber")
             licenseId = license_summary.get("LicenseId")
             personId = license_summary.get("PersonId")
 
-            license_detail = self.get_license_details(personId, licenseNumber, licenseId, curl_proxy)
+            license_detail = self._get_license_details(personId, licenseNumber, licenseId, curl_proxy)
             license_details_list.append(license_detail)
 
         return license_details_list
 
-
-    def get_license_details(self, personId, licenseNumber, licenseId, curl_proxy=None):
+    def _get_license_details(self, personId, licenseNumber, licenseId, curl_proxy=None):
         """
         Get the license details of a particular license
         :param PersonId:
@@ -312,10 +219,10 @@ class PALS:
         else:
             proxy = self.curl_proxy
 
-        headers_dict = self.get_site_request_headers()
+        headers_dict = self._get_site_request_headers()
 
         requester = CurlRequests(self.cookies_dict, headers_dict=headers_dict)
-        data = self.data_for_single_license_details(personId, licenseNumber, licenseId)
+        data = self._data_for_single_license_details(personId, licenseNumber, licenseId)
         license_details = requester.send_curl_request(request_url=self.LICENSE_DETAILS_URL, proxy=proxy, form_data=data, specified_method="POST")
 
         return license_details

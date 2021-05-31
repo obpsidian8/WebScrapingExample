@@ -116,7 +116,6 @@ class ARMedBoard:
         print(f"\nINFO: Cookies found from site response+ merge with passed in ones\n\t{json.dumps(self.cookies_dict, indent=2)}")
         self.save_cookie_to_disk(self.cookies_dict)
 
-
     def get_site_request_headers(self):
         """
         Defines and returns curl_headers for AR Med requests.
@@ -189,7 +188,6 @@ class ARMedBoard:
             group_index = results[1]
             license_info[field] = field_value
 
-
         board_minutes_regex = re.compile(r'"ctl00_MainContentPlaceHolder_lblBoardMinutes">(.+?)</')
         board_orders_regex = re.compile(r'"ctl00_MainContentPlaceHolder_lblBoardActions">(.+?)</')
 
@@ -228,11 +226,3 @@ class ARMedBoard:
                 value = None
 
         return value, group_index
-
-
-    def get_all_licenses(self, license_type):
-        """
-        Gets all licenses of a specified type from the page
-        :param license_type:
-        :return:
-        """
