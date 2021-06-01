@@ -1,6 +1,7 @@
 import re
 import pickle
 from SeleniumScraper.SeleniumPageNavigator import get_chrome_driver, SelemiumPageNavigetor
+import time
 
 
 class ORMedSeleniumScraper:
@@ -13,7 +14,6 @@ class ORMedSeleniumScraper:
         self.navigator = SelemiumPageNavigetor(self.driver)
         self.username = self.SITE_NAME
 
-
     def save_cookie_to_disk(self, cookies_dict):
         """
         Saves cookie  file to disk. To be used for sending tracking requests
@@ -24,7 +24,6 @@ class ORMedSeleniumScraper:
         with open(f'{self.username}.cookie', 'wb') as cookie_store:
             pickle.dump(cookies_dict, cookie_store)
             print("INFO: Cookie saved")
-
 
     def get_all_license_ids(self, license_type, page_limit=None):
         """
@@ -51,9 +50,11 @@ class ORMedSeleniumScraper:
                 search_btn_xpath = "(//button[contains(@ng-click,'c.search()')])"
                 self.navigator.click_element(xpath=search_btn_xpath)
 
-                results_loaded_xpath = "(//alx-list[contains(@results,'c.data.searchResults')])"
-                if results_loaded_xpath:
-                    print(f"INFO: Results Loaded")
+                results_loaded_xpath = "(//div[contains(@ng-show,'c.data.searchResults')])"
+                results_count_xpath = "(//span[contains(@ng-show, 'c.results')])"
+                results_loaded = self.navigator.check_page_loaded(results_count_xpath)
+                if results_loaded:
+                    print(f"INFO: RESULTS LOADED!")
                     pages_visited = []
                     next_view = True
 
@@ -65,9 +66,21 @@ class ORMedSeleniumScraper:
                     while next_view:
                         # Get all pages in current view
                         num_pages_current_view = self.navigator.get_number_of_elements(xpath=xpath_for_page_nums, time_delay=0.5)
-                        for page in range(num_pages_current_view + 1):
+
+                        ini_results_count_text = self.navigator.get_element_text(xpath=results_count_xpath)
+                        print(f"INFO: Initial count text ({ini_results_count_text})")
+
+                        for page in range(1, num_pages_current_view + 1):
                             xpath_current_page = f"{xpath_for_page_nums}[{page}]"
                             self.navigator.click_element(xpath=xpath_current_page)
+                            # Need to check if new page loaded after click. The results count text is updated after each page click
+                            new_results_count_text = self.navigator.get_element_text(xpath=results_count_xpath)
+                            time_spent = 0
+                            while new_results_count_text == ini_results_count_text and time_spent < 11:
+                                new_results_count_text = self.navigator.get_element_text(xpath=results_count_xpath)
+                                print(f"INFO: New count text ({new_results_count_text})")
+                                time.sleep(1)
+                                time_spent = time_spent + 1
 
                             num_results = self.navigator.get_number_of_elements(xpath=base_xpath_for_result, time_delay=0.5)
 
@@ -87,10 +100,10 @@ class ORMedSeleniumScraper:
                         print(f"INFO: {len(or_med_id_list)} OR Med ids found so far after scraping all {or_med_id_list} pages in current view."
                               f"\n\t{or_med_id_list}. Going to next view (set of pages)")
 
-                        next_view_xpath = "(//li[contains(@ng-click, 'c.increaseMaxPage()')])"
+                        next_view_xpath = "(//li[contains(@ng-click, 'c.increaseMaxPage()')]/a)"
 
                         res_count_regex = re.compile('Showing.+?-.+?(\d+).+?of.+?(\d+)')
-                        results_count_xpath = "(//span[contains(@ng-show, 'c.results')])"
+
                         results_count_text = self.navigator.get_element_text(xpath=results_count_xpath)
                         try:
                             current_count = int(res_count_regex.search(results_count_text).group(1))
@@ -109,7 +122,6 @@ class ORMedSeleniumScraper:
                         if next_view:
                             self.navigator.click_element(xpath=next_view_xpath)
                             self.navigator.check_page_loaded(page_load_xpath=results_loaded_xpath)
-
 
         cookies_dict = self.navigator.get_curl_formatted_cookies_from_browser()
         self.save_cookie_to_disk(cookies_dict)
