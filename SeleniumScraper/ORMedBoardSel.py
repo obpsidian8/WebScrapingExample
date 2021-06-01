@@ -25,6 +25,21 @@ class ORMedSeleniumScraper:
             pickle.dump(cookies_dict, cookie_store)
             print("INFO: Cookie saved")
 
+    def check_loading_status(self):
+        """
+        Checks for loading status of results on this site
+        :return:
+        """
+        loading_xpath = "(//*[@class='als-status-backdrop active'])"
+        loading = True
+        time_spent = 0
+        while loading and time_spent < 10:
+            loading = self.navigator.find_presence_of_element(xpath=loading_xpath)
+            print(f"LOADING RESULTS")
+            time.sleep(1)
+            time_spent = time_spent + 1
+        return
+
     def get_all_license_ids(self, license_type, page_limit=None):
         """
         Gets all Entity Ids of a specified type from the page
@@ -53,6 +68,9 @@ class ORMedSeleniumScraper:
                 results_loaded_xpath = "(//div[contains(@ng-show,'c.data.searchResults')])"
                 results_count_xpath = "(//span[contains(@ng-show, 'c.results')])"
                 results_loaded = self.navigator.check_page_loaded(results_count_xpath)
+
+                self.check_loading_status()
+
                 if results_loaded:
                     print(f"INFO: RESULTS LOADED!")
                     pages_visited = []
@@ -61,6 +79,7 @@ class ORMedSeleniumScraper:
                     ormed_id_regex = re.compile(r'EntityID=(\d+)')
 
                     base_xpath_for_result = "(//a[contains(@href, '.aspx?EntityID')])"
+                    base_xpath_for_name = "(//a[contains(@href, '.aspx?EntityID')]/../h4)"
                     xpath_for_page_nums = "(//li[contains(@ng-click, 'c.search(page.number)')]/a[@href])"
 
                     while next_view:
@@ -74,19 +93,15 @@ class ORMedSeleniumScraper:
                             xpath_current_page = f"{xpath_for_page_nums}[{page}]"
                             self.navigator.click_element(xpath=xpath_current_page)
                             # Need to check if new page loaded after click. The results count text is updated after each page click
-                            new_results_count_text = self.navigator.get_element_text(xpath=results_count_xpath)
-                            time_spent = 0
-                            while new_results_count_text == ini_results_count_text and time_spent < 11:
-                                new_results_count_text = self.navigator.get_element_text(xpath=results_count_xpath)
-                                print(f"INFO: New count text ({new_results_count_text})")
-                                time.sleep(1)
-                                time_spent = time_spent + 1
+                            self.check_loading_status()
 
                             num_results = self.navigator.get_number_of_elements(xpath=base_xpath_for_result, time_delay=0.5)
 
                             for idx in range(1, num_results + 1):
                                 current_result_xpath = f"{base_xpath_for_result}[{idx}]"
+                                current_name_xpath = f"{base_xpath_for_name}[{idx}]"
                                 ele = self.navigator.getElementAttributeAsText(xpath=current_result_xpath, attribute_name="href")
+                                name = self.navigator.get_element_text(xpath=current_name_xpath)
                                 try:
                                     asmb_id = ormed_id_regex.search(ele).group(1)
                                     print(f"INFO: Found Entity Id: {asmb_id}")
@@ -94,11 +109,11 @@ class ORMedSeleniumScraper:
                                 except:
                                     print("ERROR: Could not get Entity Id from element")
 
-                            print(f"INFO: Number of results found after scraping current page (page {page + 1}) {len(or_med_id_list)}")
+                            print(f"INFO: Number of results found after scraping current page (page {page}) {len(or_med_id_list)}")
 
                         # Click on next view
-                        print(f"INFO: {len(or_med_id_list)} OR Med ids found so far after scraping all {or_med_id_list} pages in current view."
-                              f"\n\t{or_med_id_list}. Going to next view (set of pages)")
+                        print(f"INFO: {len(or_med_id_list)} OR Med ids found so far after scraping all  pages in current view"
+                              f"\n\t{or_med_id_list}.\nGoing to next view (set of pages)")
 
                         next_view_xpath = "(//li[contains(@ng-click, 'c.increaseMaxPage()')]/a)"
 
@@ -121,6 +136,7 @@ class ORMedSeleniumScraper:
 
                         if next_view:
                             self.navigator.click_element(xpath=next_view_xpath)
+                            self.check_loading_status()
                             self.navigator.check_page_loaded(page_load_xpath=results_loaded_xpath)
 
         cookies_dict = self.navigator.get_curl_formatted_cookies_from_browser()
