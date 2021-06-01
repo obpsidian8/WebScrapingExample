@@ -185,6 +185,7 @@ class ORMedBoard:
             field_value = self.info_regex_builder(field, page_html_response, license_number)
 
             field=field.replace("dtgLicense_ctl02_lbl", "")
+            field=field.replace("dtgEducation_ctl02_", "")
             field=field.replace("lbl", "")
             license_info[field] = field_value
 
@@ -208,13 +209,18 @@ class ORMedBoard:
                 address = address.replace("\n", " ")
                 license_info[field] = address
 
+        try:
+            license_info.__delitem__("dtgLicense_ctl02_ObjectPK\" class=\"hidden")
+        except:
+            pass
+
         return license_info
 
     def info_regex_builder(self, field_name, page_html_response, license_number):
         """
         Builds the regex expression for getting the license data
         """
-        base_license_info_regex_str = fr'<span\s+id="ctl00_ContentPlaceHolder1_dtgLicense_{field_name}\W>(.+?)<'
+        base_license_info_regex_str = fr'<span\s+id="ctl00_ContentPlaceHolder1_{field_name}\W>(.+?)<'
         regex_compiled = re.compile(base_license_info_regex_str)
         try:
             field_value_list = regex_compiled.findall(page_html_response)

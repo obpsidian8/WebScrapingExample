@@ -33,10 +33,10 @@ class ORMedSeleniumScraper:
         loading_xpath = "(//*[@class='als-status-backdrop active'])"
         loading = True
         time_spent = 0
-        while loading and time_spent < 10:
+        while loading and time_spent < 18:
             loading = self.navigator.find_presence_of_element(xpath=loading_xpath)
             print(f"LOADING RESULTS")
-            time.sleep(1)
+            time.sleep(0.5)
             time_spent = time_spent + 1
         return
 
@@ -91,9 +91,10 @@ class ORMedSeleniumScraper:
 
                         for page in range(1, num_pages_current_view + 1):
                             xpath_current_page = f"{xpath_for_page_nums}[{page}]"
-                            self.navigator.click_element(xpath=xpath_current_page)
-                            # Need to check if new page loaded after click. The results count text is updated after each page click
-                            self.check_loading_status()
+                            if page != 1:
+                                self.navigator.click_element(xpath=xpath_current_page)
+                                # Need to check if new page loaded after click. The results count text is updated after each page click
+                                self.check_loading_status()
 
                             num_results = self.navigator.get_number_of_elements(xpath=base_xpath_for_result, time_delay=0.5)
 
@@ -104,7 +105,7 @@ class ORMedSeleniumScraper:
                                 name = self.navigator.get_element_text(xpath=current_name_xpath)
                                 try:
                                     asmb_id = ormed_id_regex.search(ele).group(1)
-                                    print(f"INFO: Found Entity Id: {asmb_id}")
+                                    print(f"INFO: Found Entity Id: {asmb_id} | {name}")
                                     or_med_id_list.append(asmb_id)
                                 except:
                                     print("ERROR: Could not get Entity Id from element")

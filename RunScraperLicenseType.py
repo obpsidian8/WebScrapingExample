@@ -87,11 +87,13 @@ def get_or_med_data_set(method="c", license_type="Podiatrist"):
     print(f"INFO: Found {len(asmb_id_list)} licenses of the specified type. Proceeding to get details")
     license_details_list = []
 
-    for license_id in license_details_list:
+    for license_id in asmb_id_list:
         or_med_curl = ORMedBoard(cookies_dict=None)
         license_info = or_med_curl.get_license_info(license_id)
         print(f"\n")
         print(json.dumps(license_info, indent=2))
+
+        license_details_list.append(license_info)
 
 
 def scrape_armedboard(method="c", license_num="PA-130"):
