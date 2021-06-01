@@ -70,7 +70,7 @@ class ARMedboardSeleniumScraper:
 
         return value, group_index
 
-    def get_all_licenses(self, license_type, page_limit=None):
+    def get_all_license_ids(self, license_type, page_limit=None):
         """
         Gets all ASMB Ids of a specified type from the page
         :param license_type:
@@ -126,7 +126,6 @@ class ARMedboardSeleniumScraper:
                   f"\n\t{asmb_id_list}. Going to next view (set of pages)")
 
             next_view_xpath_base = "(//a[contains(@href, 'ctl00$MainContentPlaceHolder$gvLookup') and contains(text(), '...')])"
-            num_view_buttons = self.navigator.get_number_of_elements(xpath=next_view_xpath_base)
 
             if current_view == 1:
                 next_view_xpath = f"{next_view_xpath_base}[{1}]"
