@@ -96,7 +96,7 @@ def get_or_med_data_set(method="c", license_type="Podiatrist"):
         license_details_list.append(license_info)
 
 
-def scrape_armedboard(method="c", license_num="PA-130"):
+def scrape_armedboard_specific_license_number(method="c", license_num="PA-130"):
     """
     Get details for a single license supplied from AR MED Board
     :param method:
@@ -116,7 +116,7 @@ def scrape_armedboard(method="c", license_num="PA-130"):
         print(json.dumps(license_info2, indent=2))
 
 
-def scrape_dc_health(method="c", license_num="PT870062"):
+def scrape_dc_health_specific_license_number (method="c", license_num="PT870062"):
     """
     Gets details for a single license from the DC Health site
     :param method:
@@ -131,11 +131,15 @@ def scrape_dc_health(method="c", license_num="PT870062"):
 
 
 if __name__ == "__main__":
-    get_or_med_data_set()
+    # Uncomment any of the functions below to test them
+
+    # Group One: Getting whole data types of specific type
+    # get_or_med_data_set()
     # get_pals_dataset()
     # get_dchealth_dataset()
     # get_ar_med_dataset()
 
-    # scrape_dc_health("c")
-    # scrape_armedboard("c")
+    # Group Two: Get details for specific license
+    # scrape_dc_health_specific_license_number ()
+    # scrape_armedboard_specific_license_number()
     print("Done")
