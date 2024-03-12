@@ -134,12 +134,12 @@ if __name__ == "__main__":
     # Uncomment any of the functions below to test them
 
     # Group One: Getting whole data types of specific type
-    get_or_med_data_set()
+    # get_or_med_data_set()
     # get_pals_dataset()
     # get_dchealth_dataset()
     # get_ar_med_dataset()
 
     # Group Two: Get details for specific license
     # scrape_dc_health_specific_license_number ()
-    # scrape_armedboard_specific_license_number()
+    scrape_armedboard_specific_license_number(method="s")
     print("Done")

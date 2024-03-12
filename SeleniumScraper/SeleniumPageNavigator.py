@@ -1,5 +1,7 @@
 import time
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -19,10 +21,10 @@ def get_chrome_driver(dataDirName, headless=False):
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument(f"--user-data-dir={path_to_dir}")
 
-    print(f"INFO: Adding experimental options")
-    chrome_options.add_experimental_option('w3c', False)
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option('useAutomationExtension', False)
+    print("INFO: Adding experimental options")
+    # chrome_options.add_experimental_option('w3c', False)
+    # chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    # chrome_options.add_experimental_option('useAutomationExtension', False)
     chrome_options.add_argument('--disable-blink-features=AutomationControlled')
 
     if headless:
@@ -30,11 +32,12 @@ def get_chrome_driver(dataDirName, headless=False):
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
 
-    caps = webdriver.DesiredCapabilities.CHROME.copy()
-    caps["pageLoadStrategy"] = "none"
+    # caps = webdriver.DesiredCapabilities.CHROME.copy()
+    # caps["pageLoadStrategy"] = "none" 
 
     print("INFO: Setting Chrome Options.")
-    driver = webdriver.Chrome(options=chrome_options, desired_capabilities=caps)
+    service=Service(ChromeDriverManager().install())
+    driver =  webdriver.Chrome(service=service, options=chrome_options)
     driver.set_window_size(1000, 1600)
 
     return driver
@@ -269,7 +272,7 @@ class SelemiumPageNavigetor:
     def get_number_of_elements(self, xpath, time_delay=3.0):
         time.sleep(time_delay)
         try:
-            elements = self.driver.find_elements_by_xpath(xpath)
+            elements = self.driver.find_elements(By.XPATH(xpath))
             numElements = len(elements)
         except:
             return 0

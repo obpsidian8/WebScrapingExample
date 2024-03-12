@@ -113,7 +113,7 @@ class ARMedboardSeleniumScraper:
                     current_result_xpath = f"{base_xpath_for_result}[{idx}]"
                     ele = self.navigator.getElementAttributeAsText(xpath=current_result_xpath, attribute_name="href")
                     try:
-                        asmb_id = asmb_id_regex.search(ele).group(1)
+                        asmb_id = asmb_id_regex.search(ele).group(1) # type: ignore
                         print(f"INFO: Found ASMB Id: {asmb_id}")
                         asmb_id_list.append(asmb_id)
                     except:

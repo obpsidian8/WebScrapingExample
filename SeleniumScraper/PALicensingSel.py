@@ -50,7 +50,7 @@ class PALSSeleniumScraper:
 
             value_regex = re.compile(r'number:(\d+)')
             try:
-                professionID = value_regex.search(professionID_value).group(1)
+                professionID = value_regex.search(professionID_value).group(1) # type: ignore
                 print(f"INFO: Profession Id found for {board_or_commission}: {professionID}")
             except Exception as e:
                 print(f"ERROR: Could not get profession id for {board_or_commission}. DETAILS: {e}")
@@ -66,7 +66,7 @@ class PALSSeleniumScraper:
                 licenseTypeId_value = self.navigator.getElementAttributeAsText(xpath=license_type_selector_xpath, attribute_name="value")
 
                 try:
-                    licenseTypeID = value_regex.search(licenseTypeId_value).group(1)
+                    licenseTypeID = value_regex.search(licenseTypeId_value).group(1) # type: ignore
                     print(f"INFO: License type Id found for {license_type}: {licenseTypeID}")
                 except Exception as e:
                     print(f"ERROR: License type Id for {license_type}. DETAILS: {e}")
