@@ -272,9 +272,10 @@ class SelemiumPageNavigetor:
     def get_number_of_elements(self, xpath, time_delay=3.0):
         time.sleep(time_delay)
         try:
-            elements = self.driver.find_elements(By.XPATH(xpath))
+            elements = self.driver.find_elements(By.XPATH, xpath)
             numElements = len(elements)
-        except:
+        except Exception as e:
+            print(f"Get Number of elements failed: {e}")
             return 0
 
         return numElements
