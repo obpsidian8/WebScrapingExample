@@ -48,7 +48,7 @@ class ARMedboardSeleniumScraper:
 
     def xpath_builder(self, field_name, license_number, group_index):
         """
-        Builds the xpath for the field names
+        Builds the xpath for the field names.
         """
         value = None
         xpath_string_original = f"(//li[contains(text(),'{field_name}')]/span)"
