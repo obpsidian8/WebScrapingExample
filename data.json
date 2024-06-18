@@ -7,16 +7,13 @@
     "batters": {
       "batter":
       [
-        {
-          "id": "1001",
+        {"id": "1001",
           "type": "CHANGED"
         },
-        {
-          "id": "1002",
+        {"id": "1002",
           "type": "Chocolate"
         },
-        {
-          "id": "1003",
+        {"id": "1003",
           "type": "Blueberry"
         },
         {

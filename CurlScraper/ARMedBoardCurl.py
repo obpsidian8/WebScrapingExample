@@ -3,7 +3,9 @@ import re
 import json
 import pickle
 from CurlScraper.CoreLibrary.PyCurlRequest import CurlRequests
+from LoggingModule import set_logging
 
+logger = set_logging()
 
 class ARMedBoard:
     """
@@ -29,14 +31,14 @@ class ARMedBoard:
         Loads cookies from disk if available, for sending requests
         :return:
         """
-        print(f"INFO: LOADING COOKIE FROM DISK")
+        logger.info(f"INFO: LOADING COOKIE FROM DISK")
         cookie = None
         if os.path.exists(f'{self.username}.cookie'):
-            print(f"\nINFO: Cookie present on disk! Loading into program.")
+            logger.info(f"\nINFO: Cookie present on disk! Loading into program.")
             with open(f'{self.username}.cookie', 'rb') as cookie_store:
                 cookie = pickle.load(cookie_store)
                 if cookie:
-                    print("INFO: Cookie loaded from disk")
+                    logger.info("INFO: Cookie loaded from disk")
                     self.cookies_dict = cookie
 
         return cookie
@@ -47,32 +49,32 @@ class ARMedBoard:
         :param cookies_dict:
         :return:
         """
-        print(f"\nINFO: SAVING COOKIES TO DISK")
+        logger.info(f"\nINFO: SAVING COOKIES TO DISK")
         with open(f'{self.username}.cookie', 'wb') as cookie_store:
             pickle.dump(cookies_dict, cookie_store)
-            print("INFO: Cookie saved")
+            logger.info("INFO: Cookie saved")
 
     def set_cookies_dict(self, curl_proxy=None):
         """
         Check if cookies are stored on local machine before trying to get a new one
         :return:
         """
-        print(f"\nINFO: SETTING COOKIES FOR SESSION")
+        logger.info(f"\nINFO: SETTING COOKIES FOR SESSION")
         if curl_proxy:
             proxy = curl_proxy
         else:
             proxy = self.curl_proxy
 
         if self.cookies_dict:
-            print(f"INFO: Cookies passed in to init. Will merge with ones from disk or new ones from site")
+            logger.info(f"INFO: Cookies passed in to init. Will merge with ones from disk or new ones from site")
 
         cookie_dict_from_disk = self.load_cookie_from_disk()
         if cookie_dict_from_disk:
             # Merge cookies from disk to the ones passed
-            print(f"INFO: Merging cookies from disk to new cookies")
+            logger.info(f"INFO: Merging cookies from disk to new cookies")
             cookie_dict_from_disk.update(self.cookies_dict)
             self.cookies_dict = cookie_dict_from_disk
-            print(f"\nINFO: Cookies found from disk + merge with passed in ones\n\t{json.dumps(self.cookies_dict, indent=2)}")
+            logger.info(f"\nINFO: Cookies found from disk + merge with passed in ones\n\t{json.dumps(self.cookies_dict, indent=2)}")
 
         # This process will get cookies from site and add in the new values to the self.cookies dict from init (which may be empty or contain some key-value pairs)
         headers_dict = self.get_site_request_headers()
@@ -88,32 +90,32 @@ class ARMedBoard:
         :param response:
         :return:
         """
-        print(f"\nINFO: ADDING COOKIES FROM SITE RESPONSE")
+        logger.info(f"\nINFO: ADDING COOKIES FROM SITE RESPONSE")
         cookie_regex = re.compile(r'Set-Cookie:\s(.*?=.*?);', flags=re.IGNORECASE)
         cookies_list = cookie_regex.findall(str(response))
 
-        print(f"INFO: Found cookies to add {cookies_list}")
+        logger.info(f"INFO: Found cookies to add {cookies_list}")
 
         cookie_dict_regex = re.compile(r'(.*?)=(.*)')
         for cookie in cookies_list:
             try:
                 name = cookie_dict_regex.search(cookie).group(1).strip()
-                print(f"INFO: Found cookie: {name}")
+                logger.info(f"INFO: Found cookie: {name}")
             except:
-                print(f"ERROR Extracting cookie name")
+                logger.info(f"ERROR Extracting cookie name")
                 name = None
 
             try:
                 value = cookie_dict_regex.search(cookie).group(2).strip()
-                print(f"INFO: Found value of cookie {name}: {value}")
+                logger.info(f"INFO: Found value of cookie {name}: {value}")
             except:
-                print(f"ERROR Extracting cookie value")
+                logger.info(f"ERROR Extracting cookie value")
                 value = None
 
             if name not in self.cookies_dict.keys():
                 self.cookies_dict[name] = value
 
-        print(f"\nINFO: Cookies found from site response+ merge with passed in ones\n\t{json.dumps(self.cookies_dict, indent=2)}")
+        logger.info(f"\nINFO: Cookies found from site response+ merge with passed in ones\n\t{json.dumps(self.cookies_dict, indent=2)}")
         self.save_cookie_to_disk(self.cookies_dict)
 
     def get_site_request_headers(self):
@@ -139,7 +141,7 @@ class ARMedBoard:
         Gets details license page as html response
         :return:
         """
-        print(f"\nINFO: GETTING LICENSE PAGE FROM SERVER")
+        logger.info(f"\nINFO: GETTING LICENSE PAGE FROM SERVER")
         if curl_proxy:
             proxy = curl_proxy
         else:
@@ -167,7 +169,7 @@ class ARMedBoard:
         else:
             license_page_url = f"{self.LICENSE_SEARCH_URL}{license_number}"
 
-        print(f"\nINFO: GETTING LICENSE INFO")
+        logger.info(f"\nINFO: GETTING LICENSE INFO")
         if curl_proxy:
             proxy = curl_proxy
         else:
@@ -194,12 +196,12 @@ class ARMedBoard:
         try:
             license_info["Board Minutes"] = board_minutes_regex.search(page_html_response).group(1)
         except:
-            print(f"ERROR: Could not extract Board minutes using this regex")
+            logger.info(f"ERROR: Could not extract Board minutes using this regex")
 
         try:
             license_info["Board Orders"] = board_orders_regex.search(page_html_response).group(1)
         except:
-            print(f"ERROR: Could not extract Board minutes using this regex")
+            logger.info(f"ERROR: Could not extract Board minutes using this regex")
 
         return license_info
 
@@ -218,7 +220,7 @@ class ARMedBoard:
             else:
                 value = field_value_list[group_index]
         except:
-            print(f"ERROR: Could not extract field value of {field_name} from page source")
+            logger.info(f"ERROR: Could not extract field value of {field_name} from page source")
             value = None
 
         if value:

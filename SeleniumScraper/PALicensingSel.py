@@ -1,7 +1,9 @@
 import re
 import pickle
 from SeleniumScraper.SeleniumPageNavigator import get_chrome_driver, SelemiumPageNavigetor
+from LoggingModule import set_logging
 
+logger = set_logging()
 
 class PALSSeleniumScraper:
     SITE_NAME = "PALicensingSystem"
@@ -19,10 +21,10 @@ class PALSSeleniumScraper:
         :param cookies_dict:
         :return:
         """
-        print(f"\nINFO: SAVING COOKIES TO DISK")
+        logger.info(f"\nINFO: SAVING COOKIES TO DISK")
         with open(f'{self.username}.cookie', 'wb') as cookie_store:
             pickle.dump(cookies_dict, cookie_store)
-            print("INFO: Cookie saved")
+            logger.info("INFO: Cookie saved")
 
     def get_board_and_licence_type_codes(self, board_or_commission, license_type):
         """
@@ -51,9 +53,9 @@ class PALSSeleniumScraper:
             value_regex = re.compile(r'number:(\d+)')
             try:
                 professionID = value_regex.search(professionID_value).group(1) # type: ignore
-                print(f"INFO: Profession Id found for {board_or_commission}: {professionID}")
+                logger.info(f"INFO: Profession Id found for {board_or_commission}: {professionID}")
             except Exception as e:
-                print(f"ERROR: Could not get profession id for {board_or_commission}. DETAILS: {e}")
+                logger.info(f"ERROR: Could not get profession id for {board_or_commission}. DETAILS: {e}")
 
             license_type_dropdown_xpath = "(//select[contains(@name, 'LicenseType')])"
             license_type_selector_xpath = f"(//option[text()='{license_type}'])"
@@ -67,9 +69,9 @@ class PALSSeleniumScraper:
 
                 try:
                     licenseTypeID = value_regex.search(licenseTypeId_value).group(1) # type: ignore
-                    print(f"INFO: License type Id found for {license_type}: {licenseTypeID}")
+                    logger.info(f"INFO: License type Id found for {license_type}: {licenseTypeID}")
                 except Exception as e:
-                    print(f"ERROR: License type Id for {license_type}. DETAILS: {e}")
+                    logger.info(f"ERROR: License type Id for {license_type}. DETAILS: {e}")
 
         info_id["professionID"] = professionID
         info_id["licenseTypeId"] = licenseTypeID

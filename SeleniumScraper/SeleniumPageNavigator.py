@@ -8,7 +8,9 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
+from LoggingModule import set_logging
 
+logger = set_logging()
 
 def get_chrome_driver(dataDirName, headless=False):
     """
@@ -21,21 +23,21 @@ def get_chrome_driver(dataDirName, headless=False):
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument(f"--user-data-dir={path_to_dir}")
 
-    print("INFO: Adding experimental options")
+    logger.info("INFO: Adding experimental options")
     # chrome_options.add_experimental_option('w3c', False)
     # chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     # chrome_options.add_experimental_option('useAutomationExtension', False)
     chrome_options.add_argument('--disable-blink-features=AutomationControlled')
 
     if headless:
-        print("INFO: Running in headless mode")
+        logger.info("INFO: Running in headless mode")
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
 
     # caps = webdriver.DesiredCapabilities.CHROME.copy()
     # caps["pageLoadStrategy"] = "none" 
 
-    print("INFO: Setting Chrome Options.")
+    logger.info("INFO: Setting Chrome Options.")
     service=Service(ChromeDriverManager().install())
     driver =  webdriver.Chrome(service=service, options=chrome_options)
     driver.set_window_size(1000, 1600)
@@ -49,144 +51,144 @@ class SelemiumPageNavigetor:
 
     def check_page_state(self, time_out=8):
         state = self.driver.execute_script('return document.readyState')
-        print(f"INFO: Document state: {state}")
+        logger.info(f"INFO: Document state: {state}")
         while state != 'complete' and time_out > 0:
             time.sleep(1)
-            print(f"INFO: Waiting for page load to complete. Time left: {time_out}")
+            logger.info(f"INFO: Waiting for page load to complete. Time left: {time_out}")
             state = self.driver.execute_script('return document.readyState')
-            print(f"INFO:Current document state: {state}")
+            logger.info(f"INFO:Current document state: {state}")
             time_out = time_out - 1
 
     def refresh_page(self, time_out=30):
-        print(f"\nINFO: Refreshing current page!")
+        logger.info(f"\nINFO: Refreshing current page!")
         self.driver.set_page_load_timeout(time_out)
         start = time.time()
         try:
             self.driver.refresh()
-            print(f"LOG INFO: Page refreshed successfully")
+            logger.info(f"LOG INFO: Page refreshed successfully")
         except TimeoutException as e:
-            print(f"ERROR: Timeout occurred trying to get page on first try. Refreshing page and trying again. DETAILS: {e}")
+            logger.info(f"ERROR: Timeout occurred trying to get page on first try. Refreshing page and trying again. DETAILS: {e}")
             try:
-                print(f"INFO: Trying page load again")
+                logger.info(f"INFO: Trying page load again")
                 self.driver.execute_script("window.stop();")
                 self.driver.refresh()
             except TimeoutException:
                 try:
                     self.driver.execute_script("window.stop();")
                 except Exception as e:
-                    print(f"ERROR: Driver error: Details {e}")
+                    logger.info(f"ERROR: Driver error: Details {e}")
 
         self.check_page_state()
         end = time.time()
         total = end - start
-        print(f"PAGE refresh took: {total}\n")
+        logger.info(f"PAGE refresh took: {total}\n")
 
     def get_page_source(self, time_out=30):
         htmlPage = "Null"
         self.check_page_state()
 
-        print(f"\nINFO: Getting HTML Page source. Time out: {time_out}")
+        logger.info(f"\nINFO: Getting HTML Page source. Time out: {time_out}")
         self.driver.set_page_load_timeout(time_out)
         try:
             htmlPage = self.driver.page_source
-            print(f"LOG INFO: Page source found")
+            logger.info(f"LOG INFO: Page source found")
         except TimeoutException as e:
-            print(f"ERROR: Timeout occurred trying to get page source on first try. Refreshing page and trying again. DETAILS: {e}")
+            logger.info(f"ERROR: Timeout occurred trying to get page source on first try. Refreshing page and trying again. DETAILS: {e}")
             try:
                 self.driver.execute_script("window.stop();")
                 self.driver.refresh()
                 htmlPage = self.driver.page_source
             except TimeoutException:
-                print(f"LOG INFO: Retry Limit reached! Will stop page loading now")
+                logger.info(f"LOG INFO: Retry Limit reached! Will stop page loading now")
                 try:
                     self.driver.execute_script("window.stop();")
                 except Exception as e:
-                    print(f"ERROR: Driver error: Details {e}")
+                    logger.info(f"ERROR: Driver error: Details {e}")
 
         return htmlPage
 
     def get_page(self, url: str, time_out=30):
-        print(f"\nINFO: {url} Will try to get page for at least {time_out} seconds.")
+        logger.info(f"\nINFO: {url} Will try to get page for at least {time_out} seconds.")
         self.driver.set_page_load_timeout(time_out)
         start = time.time()
 
         try:
             self.driver.get(url)
-            print(f"\nINFO: {url} loaded successfully")
+            logger.info(f"\nINFO: {url} loaded successfully")
         except TimeoutException as e:
-            print(f"ERROR: Timeout occurred trying to get page on first try. Refreshing page and trying again. DETAILS: {e}")
+            logger.info(f"ERROR: Timeout occurred trying to get page on first try. Refreshing page and trying again. DETAILS: {e}")
             try:
-                print(f"INFO: Trying page load again")
+                logger.info(f"INFO: Trying page load again")
                 self.driver.execute_script("window.stop();")
                 self.driver.refresh()
             except TimeoutException:
                 try:
                     self.driver.execute_script("window.stop();")
                 except Exception as e:
-                    print(f"ERROR: Driver error: Details {e}")
+                    logger.info(f"ERROR: Driver error: Details {e}")
 
         self.check_page_state()
 
         end = time.time()
         total = end - start
-        print(f"PAGE LOAD TOOK: {total}\n")
+        logger.info(f"PAGE LOAD TOOK: {total}\n")
 
     def get_current_url(self, time_out=30):
         url = "/"
         self.check_page_state()
 
-        print(f"\nINFO: Will try to get current url for at least {time_out} seconds.")
+        logger.info(f"\nINFO: Will try to get current url for at least {time_out} seconds.")
         self.driver.set_page_load_timeout(time_out)
 
         try:
             url = self.driver.current_url
-            print(f"LOG INFO: Current {url} obtained successfully")
+            logger.info(f"LOG INFO: Current {url} obtained successfully")
         except TimeoutException as e:
-            print(f"ERROR: Timeout occurred trying to get current url on first try. Refreshing page and trying again. DETAILS: {e}")
+            logger.info(f"ERROR: Timeout occurred trying to get current url on first try. Refreshing page and trying again. DETAILS: {e}")
             try:
                 self.driver.execute_script("window.stop();")
                 self.driver.refresh()
                 url = self.driver.current_url
             except TimeoutException:
-                print(f"LOG INFO: Retry Limit reached! Will stop page loading now")
+                logger.info(f"LOG INFO: Retry Limit reached! Will stop page loading now")
                 try:
                     self.driver.execute_script("window.stop();")
                 except Exception as e:
-                    print(f"ERROR: Driver error: Details {e}")
+                    logger.info(f"ERROR: Driver error: Details {e}")
         return url
 
     def get_page_title(self, time_out=30):
         title = "about:blank"
         self.check_page_state()
 
-        print(f"\nINFO: Will try to get page title for at least {time_out} seconds.")
+        logger.info(f"\nINFO: Will try to get page title for at least {time_out} seconds.")
         self.driver.set_page_load_timeout(time_out)
 
         try:
             title = self.driver.title
-            print(f"LOG INFO: Page title {title} obtained successfully")
+            logger.info(f"LOG INFO: Page title {title} obtained successfully")
         except TimeoutException as e:
-            print(f"ERROR: Timeout occurred trying to get current page title on first try. Refreshing page and trying again. DETAILS: {e}")
+            logger.info(f"ERROR: Timeout occurred trying to get current page title on first try. Refreshing page and trying again. DETAILS: {e}")
             try:
                 self.driver.execute_script("window.stop();")
                 self.driver.refresh()
                 url = self.driver.current_url
             except TimeoutException:
-                print(f"LOG INFO: Retry Limit reached! Will stop page loading now")
+                logger.info(f"LOG INFO: Retry Limit reached! Will stop page loading now")
                 try:
                     self.driver.execute_script("window.stop();")
                 except Exception as e:
-                    print(f"ERROR: Driver error: Details {e}")
+                    logger.info(f"ERROR: Driver error: Details {e}")
         return title
 
     def switchToIframe(self, xpath, time_delay=3.0, pause_after_action=1):
         try:
             wait = WebDriverWait(self.driver, time_delay)
             wait.until(EC.frame_to_be_available_and_switch_to_it((By.XPATH, xpath)))
-            print(f"LOG INFO: Switched to iframe at {xpath}")
+            logger.info(f"LOG INFO: Switched to iframe at {xpath}")
         except Exception as e:
             # traceback.print_exc()
-            print(f"ERROR: Error switching to iframe at {xpath}. Details {e}")
+            logger.info(f"ERROR: Error switching to iframe at {xpath}. Details {e}")
             return False
         time.sleep(pause_after_action)
         return True
@@ -199,18 +201,18 @@ class SelemiumPageNavigetor:
             empty_field.click()
             empty_field.clear()
             empty_field.send_keys(str(value))
-            print(f"INFO: Entered value into field at {xpath}")
+            logger.info(f"INFO: Entered value into field at {xpath}")
         except Exception as e:
-            print(f"ERROR: First Exception entering value {e}")
+            logger.info(f"ERROR: First Exception entering value {e}")
             try:
                 empty_field = WebDriverWait(self.driver, time_delay).until(EC.element_to_be_clickable((By.XPATH, xpath)))
                 sleepTime = time_delay / 2
                 time.sleep(sleepTime)
                 empty_field.send_keys(str(value))
-                print(f"INFO: Entered value into field at {xpath}")
+                logger.info(f"INFO: Entered value into field at {xpath}")
             except Exception as e_:
                 # traceback.print_exc()
-                print(f"ERROR: Error entering value for the element given by xpath {xpath}. Details {e_} ")
+                logger.info(f"ERROR: Error entering value for the element given by xpath {xpath}. Details {e_} ")
                 return False
         time.sleep(pause_after_action)
         return True
@@ -221,10 +223,10 @@ class SelemiumPageNavigetor:
             sleepTime = time_delay / 2
             time.sleep(sleepTime)
             empty_field.send_keys(Keys.ENTER)
-            print(f"INFO: ENTER Key sent into field at {xpath}")
+            logger.info(f"INFO: ENTER Key sent into field at {xpath}")
         except Exception as e:
             # traceback.print_exc()
-            print(f"ERROR: Error entering value for the element given by xpath {xpath}. Details {e}")
+            logger.info(f"ERROR: Error entering value for the element given by xpath {xpath}. Details {e}")
             return False
 
         time.sleep(pause_after_action)
@@ -236,11 +238,11 @@ class SelemiumPageNavigetor:
             sleepTime = time_delay / 2
             time.sleep(sleepTime)
             element.click()
-            print(f"INFO: Element at {xpath}  successfully clicked")
+            logger.info(f"INFO: Element at {xpath}  successfully clicked")
             time.sleep(pause_after_action)
         except Exception as e:
             # traceback.print_exc()
-            print(f"ERROR: Error clicking element given by xpath {xpath}. Details {e}")
+            logger.info(f"ERROR: Error clicking element given by xpath {xpath}. Details {e}")
             return False
 
         return True
@@ -248,10 +250,10 @@ class SelemiumPageNavigetor:
     def find_presence_of_element(self, xpath, time_delay=3.0):
         try:
             element = WebDriverWait(self.driver, time_delay).until(EC.presence_of_element_located((By.XPATH, xpath)))
-            print(f"INFO: Element {element} at {xpath}  present")
+            logger.info(f"INFO: Element {element} at {xpath}  present")
         except Exception as e:
             # traceback.print_exc()
-            print(f"ERROR: Error finding element given by xpath {xpath}. Details {e}")
+            logger.info(f"ERROR: Error finding element given by xpath {xpath}. Details {e}")
             return False
 
         return True
@@ -260,10 +262,10 @@ class SelemiumPageNavigetor:
         try:
             element = WebDriverWait(self.driver, time_delay).until(EC.presence_of_element_located((By.XPATH, xpath)))
             element_text = element.text
-            print(f"INFO: Text found for element at  {xpath}")
+            logger.info(f"INFO: Text found for element at  {xpath}")
         except Exception as e:
             # traceback.print_exc()
-            print(f"ERROR: Errorgetting text for the element given by xpath {xpath}. Details {e}")
+            logger.info(f"ERROR: Errorgetting text for the element given by xpath {xpath}. Details {e}")
             script = "return document.getElementById('hidden_div').innerHTML"
             element_text = None
 
@@ -275,7 +277,7 @@ class SelemiumPageNavigetor:
             elements = self.driver.find_elements(By.XPATH, xpath)
             numElements = len(elements)
         except Exception as e:
-            print(f"Get Number of elements failed: {e}")
+            logger.info(f"Get Number of elements failed: {e}")
             return 0
 
         return numElements
@@ -284,7 +286,7 @@ class SelemiumPageNavigetor:
         try:
             elementObject = WebDriverWait(self.driver, time_delay).until(EC.presence_of_element_located((By.XPATH, xpath)))
             elementObjectText = elementObject.get_attribute("outerHTML")
-            print(f"INFO: Found html element at {elementObject}")
+            logger.info(f"INFO: Found html element at {elementObject}")
         except:
             return None
 
@@ -295,7 +297,7 @@ class SelemiumPageNavigetor:
             elementObject = WebDriverWait(self.driver, time_delay).until(EC.presence_of_element_located((By.XPATH, xpath)))
             elementObjectAttributeText = elementObject.get_attribute(attribute_name)
         except Exception as e:
-            print(
+            logger.info(
                 f"ERROR: Error getting text for the element given by xpath {xpath} or no attribute with name {attribute_name}. Details {e}")
             return None
 
@@ -308,65 +310,65 @@ class SelemiumPageNavigetor:
         """
         start_time = time.time()
         current_page = self.driver.current_url
-        print(f"Waiting for set page to load:")
+        logger.info(f"Waiting for set page to load:")
         # CHECK IF PAGE IS LOADED
         pageLoadComplete = self.find_presence_of_element(page_load_xpath, time_delay=max_wait_time)
         if pageLoadComplete is True:
-            print(f"INFO: Page loading complete after {time.time() - start_time} seconds")
+            logger.info(f"INFO: Page loading complete after {time.time() - start_time} seconds")
         else:
-            print("WARNING: Page did not load on first try. Waiting")
+            logger.info("WARNING: Page did not load on first try. Waiting")
             pageLoadComplete = self.find_presence_of_element(page_load_xpath, time_delay=max_wait_time)
             if pageLoadComplete is True:
-                print(f"INFO: Page fully loaded after {time.time() - start_time} seconds")
+                logger.info(f"INFO: Page fully loaded after {time.time() - start_time} seconds")
             else:
-                print(f"ERROR: Page did not load completely. Total wait time: {time.time() - start_time} seconds")
+                logger.info(f"ERROR: Page did not load completely. Total wait time: {time.time() - start_time} seconds")
 
         return pageLoadComplete
 
     def switchTomainWindow(self):
         handlesList = self.driver.window_handles
-        print(f"Window handles active {handlesList}")
+        logger.info(f"Window handles active {handlesList}")
         # CHECK IF CURRENT WINDOW IS NOT FIRST WINDOW HANDLE. IF ITS NOT, CLOSE IT.
         try:
             windowHandle = self.driver.current_window_handle
-            print(f"Current window handle: {windowHandle}")
+            logger.info(f"Current window handle: {windowHandle}")
             if windowHandle != self.driver.window_handles[0]:
                 self.driver.close()
-                print("Current window closed.")
+                logger.info("Current window closed.")
         except:
             self.driver.get('about:blank')
             try:
                 windowHandle = self.driver.current_window_handle
-                print(f"Current window handle: {windowHandle}")
+                logger.info(f"Current window handle: {windowHandle}")
                 if windowHandle != self.driver.window_handles[0]:
                     self.driver.close()
-                    print("Current window closed.")
+                    logger.info("Current window closed.")
             except:
-                print("Error Closing window")
+                logger.info("Error Closing window")
 
         # SWITCH TO THE FIRST WINDOW HANDLE
         try:
-            print("Switching to tab with handle id 0 ")
+            logger.info("Switching to tab with handle id 0 ")
             self.driver.switch_to.window(self.driver.window_handles[0])
         except:
-            print("Tab switch failed or already on main tab.")
+            logger.info("Tab switch failed or already on main tab.")
 
     def close_all_tabs_and_switch_to_main(self):
         handlesList = self.driver.window_handles
-        print(f"Window handles active {handlesList}")
+        logger.info(f"Window handles active {handlesList}")
         for window in handlesList:
             if window != handlesList[0]:
-                print(f"INFO: Switching to non main window and closing it.")
+                logger.info(f"INFO: Switching to non main window and closing it.")
                 self.driver.switch_to.window(window)
                 self.driver.close()
-                print("INFO: Current window closed.")
+                logger.info("INFO: Current window closed.")
 
         # SWITCH TO THE FIRST WINDOW HANDLE
         try:
-            print("Switching to tab with handle id 0 ")
+            logger.info("Switching to tab with handle id 0 ")
             self.driver.switch_to.window(self.driver.window_handles[0])
         except:
-            print("Tab switch failed or already on main tab.")
+            logger.info("Tab switch failed or already on main tab.")
 
     def scroll(self, scroll_count_limit=10):
         SCROLL_PAUSE_TIME = 8
@@ -388,7 +390,7 @@ class SelemiumPageNavigetor:
             if new_height == last_height:
                 break
             last_height = new_height
-            print(f"Scroll # {scroll_count} done!")
+            logger.info(f"Scroll # {scroll_count} done!")
 
     def get_curl_formatted_cookies_from_browser(self):
         """

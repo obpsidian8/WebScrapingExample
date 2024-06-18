@@ -2,7 +2,9 @@ import re
 import pickle
 from SeleniumScraper.SeleniumPageNavigator import get_chrome_driver, SelemiumPageNavigetor
 import time
+from LoggingModule import set_logging
 
+logger = set_logging()
 
 class ORMedSeleniumScraper:
     SITE_NAME = "ORMedBoard"
@@ -20,10 +22,10 @@ class ORMedSeleniumScraper:
         :param cookies_dict:
         :return:
         """
-        print(f"\nINFO: SAVING COOKIES TO DISK")
+        logger.info(f"\nINFO: SAVING COOKIES TO DISK")
         with open(f'{self.username}.cookie', 'wb') as cookie_store:
             pickle.dump(cookies_dict, cookie_store)
-            print("INFO: Cookie saved")
+            logger.info("INFO: Cookie saved")
 
     def check_loading_status(self):
         """
@@ -35,7 +37,7 @@ class ORMedSeleniumScraper:
         time_spent = 0
         while loading and time_spent < 18:
             loading = self.navigator.find_presence_of_element(xpath=loading_xpath)
-            print(f"LOADING RESULTS")
+            logger.info(f"LOADING RESULTS")
             time.sleep(0.5)
             time_spent = time_spent + 1
         return
@@ -72,7 +74,7 @@ class ORMedSeleniumScraper:
                 self.check_loading_status()
 
                 if results_loaded:
-                    print(f"INFO: RESULTS LOADED!")
+                    logger.info(f"INFO: RESULTS LOADED!")
                     pages_visited = []
                     next_view = True
 
@@ -87,7 +89,7 @@ class ORMedSeleniumScraper:
                         num_pages_current_view = self.navigator.get_number_of_elements(xpath=xpath_for_page_nums, time_delay=0.5)
 
                         ini_results_count_text = self.navigator.get_element_text(xpath=results_count_xpath)
-                        print(f"INFO: Initial count text ({ini_results_count_text})")
+                        logger.info(f"INFO: Initial count text ({ini_results_count_text})")
 
                         for page in range(1, num_pages_current_view + 1):
                             xpath_current_page = f"{xpath_for_page_nums}[{page}]"
@@ -105,15 +107,15 @@ class ORMedSeleniumScraper:
                                 name = self.navigator.get_element_text(xpath=current_name_xpath)
                                 try:
                                     asmb_id = ormed_id_regex.search(ele).group(1)
-                                    print(f"INFO: Found Entity Id: {asmb_id} | {name}")
+                                    logger.info(f"INFO: Found Entity Id: {asmb_id} | {name}")
                                     or_med_id_list.append(asmb_id)
                                 except:
-                                    print("ERROR: Could not get Entity Id from element")
+                                    logger.info("ERROR: Could not get Entity Id from element")
 
-                            print(f"INFO: Number of results found after scraping current page (page {page}) {len(or_med_id_list)}")
+                            logger.info(f"INFO: Number of results found after scraping current page (page {page}) {len(or_med_id_list)}")
 
                         # Click on next view
-                        print(f"INFO: {len(or_med_id_list)} OR Med ids found so far after scraping all  pages in current view"
+                        logger.info(f"INFO: {len(or_med_id_list)} OR Med ids found so far after scraping all  pages in current view"
                               f"\n\t{or_med_id_list}.\nGoing to next view (set of pages)")
 
                         next_view_xpath = "(//li[contains(@ng-click, 'c.increaseMaxPage()')]/a)"
@@ -123,9 +125,9 @@ class ORMedSeleniumScraper:
                         results_count_text = self.navigator.get_element_text(xpath=results_count_xpath)
                         try:
                             current_count = int(res_count_regex.search(results_count_text).group(1))
-                            print(f"INFO:Current count is {current_count}")
+                            logger.info(f"INFO:Current count is {current_count}")
                             total_count = int(res_count_regex.search(results_count_text).group(2))
-                            print(f"INFO: Total count is {total_count}")
+                            logger.info(f"INFO: Total count is {total_count}")
                         except:
                             current_count = 1
                             total_count = 1

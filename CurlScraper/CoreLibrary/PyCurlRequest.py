@@ -2,7 +2,9 @@ import shlex
 import subprocess
 import json
 import gzip
+from LoggingModule import set_logging
 
+logger = set_logging()
 
 class CurlRequests:
     """
@@ -31,10 +33,10 @@ class CurlRequests:
         :return:
         """
         if not self.headers_dict:
-            print(f"INFO: Caught empty headers dict passed into instance. Special case")
+            logger.info(f"INFO: Caught empty headers dict passed into instance. Special case")
             self.headers_dict = self.regular_browser_headers_dict()
         else:
-            print(f"INFO: Headers dict was passed into instance already.")
+            logger.info(f"INFO: Headers dict was passed into instance already.")
 
         return
 
@@ -158,7 +160,7 @@ class CurlRequests:
 
         # Add specified method if one is specified
         if specified_method:
-            print(f"INFO: Applying specified method to prefix: {specified_method}")
+            logger.info(f"INFO: Applying specified method to prefix: {specified_method}")
             specified_method_flag = f"-X '{specified_method}'"
         else:
             specified_method_flag = ""
@@ -178,7 +180,7 @@ class CurlRequests:
         if add_compression:
             full_cmd = full_cmd + " --compressed"
 
-        print(f"INFO: Full command formed:\n\t{full_cmd}\n\nINFO: Ready to send")
+        logger.info(f"INFO: Full command formed:\n\t{full_cmd}\n\nINFO: Ready to send")
         return full_cmd
 
     def send_curl_request(self, request_url, data=None, add_compression=False, proxy=None, specified_method=None, form_data=None, page_redirects=False, include=False, verbose=True, url_encode_data=False, download_file=False, timeout=8, shell_needed=False):
@@ -199,7 +201,7 @@ class CurlRequests:
         """
         full_cmd = self.build_full_curl_cmd(request_url, data, add_compression, proxy, specified_method, form_data, page_redirects, include, url_encode_data, download_file)
         args = shlex.split(full_cmd)
-        print(f"INFO: Sending command as args:\n\t{args}\n\n")
+        logger.info(f"INFO: Sending command as args:\n\t{args}\n\n")
         response = {}
         try:
             if download_file:
@@ -225,37 +227,37 @@ class CurlRequests:
 
             # Try decompressing data
             try:
-                print(f"INFO: Trying to decompress the data")
+                logger.info(f"INFO: Trying to decompress the data")
                 response = gzip.decompress(response)
-                print(f"INFO: Successfully decompressed data")
+                logger.info(f"INFO: Successfully decompressed data")
             except Exception as e:
-                print(f"ERROR: Data decompression failed. DETAILS {e}")
+                logger.info(f"ERROR: Data decompression failed. DETAILS {e}")
 
             try:
-                print(f"INFO: Trying regular decoding.")
+                logger.info(f"INFO: Trying regular decoding.")
                 response = response.decode()
-                print(f"INFO: Successfully decoded data")
+                logger.info(f"INFO: Successfully decoded data")
             except Exception as e:
-                print(f"ERROR: Regular decoding failed ! DETAILS {e}")
+                logger.info(f"ERROR: Regular decoding failed ! DETAILS {e}")
 
             # Convert JSON string to actual JSON (If response is JSON string)
             try:
-                print(f"INFO: Converting any JSON string response to actual JSON")
+                logger.info(f"INFO: Converting any JSON string response to actual JSON")
                 response = json.loads(response)
-                print(f"INFO: JSON loads applied successfully to response. Returning JSON loaded response.")
+                logger.info(f"INFO: JSON loads applied successfully to response. Returning JSON loaded response.")
             except Exception as e:
-                print(f"ERROR: Could not apply JSON loads to decoded response. Server is not returning JSON formatted response. DETAILS: {e}")
+                logger.info(f"ERROR: Could not apply JSON loads to decoded response. Server is not returning JSON formatted response. DETAILS: {e}")
                 # Conversion will fail if not JSON formatted string.
                 # Make our own JSON (dictionary) and put the entire response as the value of the "response" key
                 response = {"response": response}
 
         except TimeoutError as e:
-            print(f"ERROR: Occurred while send request: DETAILS {e}")
+            logger.info(f"ERROR: Occurred while send request: DETAILS {e}")
             response['Timeout'] = True
 
         except Exception as e:
-            print(f"ERROR: Occurred while send request: DETAILS {e}")
+            logger.info(f"ERROR: Occurred while send request: DETAILS {e}")
 
         if verbose:
-            print(f"INFO:\t\nServer Response: {response}")
+            logger.info(f"INFO:\t\nServer Response: {response}")
         return response

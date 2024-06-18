@@ -6,3 +6,4 @@
 /DCHealth.cookie
 .vscode/
 /webscrapingvenv
+__pycache__/

@@ -4,7 +4,9 @@ import json
 import pickle
 from urllib.parse import quote_plus
 from CurlScraper.CoreLibrary.PyCurlRequest import CurlRequests
+from LoggingModule import set_logging
 
+logger = set_logging()
 
 class DCHealth:
     """
@@ -30,14 +32,14 @@ class DCHealth:
         Loads cookies from disk if available, for sending requests
         :return:
         """
-        print(f"INFO: LOADING COOKIE FROM DISK")
+        logger.info(f"INFO: LOADING COOKIE FROM DISK")
         cookie = None
         if os.path.exists(f'{self.username}.cookie'):
-            print(f"\nINFO: Cookie present on disk! Loading into program.")
+            logger.info(f"\nINFO: Cookie present on disk! Loading into program.")
             with open(f'{self.username}.cookie', 'rb') as cookie_store:
                 cookie = pickle.load(cookie_store)
                 if cookie:
-                    print("INFO: Cookie loaded from disk")
+                    logger.info("INFO: Cookie loaded from disk")
                     self.cookies_dict = cookie
 
         return cookie
@@ -48,32 +50,32 @@ class DCHealth:
         :param cookies_dict:
         :return:
         """
-        print(f"\nINFO: SAVING COOKIES TO DISK")
+        logger.info(f"\nINFO: SAVING COOKIES TO DISK")
         with open(f'{self.username}.cookie', 'wb') as cookie_store:
             pickle.dump(cookies_dict, cookie_store)
-            print("INFO: Cookie saved")
+            logger.info("INFO: Cookie saved")
 
     def set_cookies_dict(self, curl_proxy=None):
         """
         Check if cookies are stored on local machine before trying to get a new one
         :return:
         """
-        print(f"\nINFO: SETTING COOKIES FOR SESSION")
+        logger.info(f"\nINFO: SETTING COOKIES FOR SESSION")
         if curl_proxy:
             proxy = curl_proxy
         else:
             proxy = self.curl_proxy
 
         if self.cookies_dict:
-            print(f"INFO: Cookies passed in to init. Will merge with ones from disk or new ones from site")
+            logger.info(f"INFO: Cookies passed in to init. Will merge with ones from disk or new ones from site")
 
         cookie_dict_from_disk = self.load_cookie_from_disk()
         if cookie_dict_from_disk:
             # Merge cookies from disk to the ones passed
-            print(f"INFO: Merging cookies from disk to new cookies")
+            logger.info(f"INFO: Merging cookies from disk to new cookies")
             cookie_dict_from_disk.update(self.cookies_dict)
             self.cookies_dict = cookie_dict_from_disk
-            print(f"\nINFO: Cookies found from disk + merge with passed in ones\n\t{json.dumps(self.cookies_dict, indent=2)}")
+            logger.info(f"\nINFO: Cookies found from disk + merge with passed in ones\n\t{json.dumps(self.cookies_dict, indent=2)}")
 
         # This process will get cookies from site and add in the new values to the self.cookies dict from init (which may be empty or contain some key-value pairs)
         headers_dict = self.get_site_request_headers()
@@ -89,32 +91,32 @@ class DCHealth:
         :param response:
         :return:
         """
-        print(f"\nINFO: ADDING COOKIES FROM SITE RESPONSE")
+        logger.info(f"\nINFO: ADDING COOKIES FROM SITE RESPONSE")
         cookie_regex = re.compile(r'Set-Cookie:\s(.*?=.*?);', flags=re.IGNORECASE)
         cookies_list = cookie_regex.findall(str(response))
 
-        print(f"INFO: Found cookies to add {cookies_list}")
+        logger.info(f"INFO: Found cookies to add {cookies_list}")
 
         cookie_dict_regex = re.compile(r'(.*?)=(.*)')
         for cookie in cookies_list:
             try:
                 name = cookie_dict_regex.search(cookie).group(1).strip()
-                print(f"INFO: Found cookie: {name}")
+                logger.info(f"INFO: Found cookie: {name}")
             except:
-                print(f"ERROR Extracting cookie name")
+                logger.info(f"ERROR Extracting cookie name")
                 name = None
 
             try:
                 value = cookie_dict_regex.search(cookie).group(2).strip()
-                print(f"INFO: Found value of cookie {name}: {value}")
+                logger.info(f"INFO: Found value of cookie {name}: {value}")
             except:
-                print(f"ERROR Extracting cookie value")
+                logger.info(f"ERROR Extracting cookie value")
                 value = None
 
             if name not in self.cookies_dict.keys():
                 self.cookies_dict[name] = value
 
-        print(f"\nINFO: Cookies found from site response+ merge with passed in ones\n\t{json.dumps(self.cookies_dict, indent=2)}")
+        logger.info(f"\nINFO: Cookies found from site response+ merge with passed in ones\n\t{json.dumps(self.cookies_dict, indent=2)}")
         self.save_cookie_to_disk(self.cookies_dict)
 
     def get_site_request_headers(self):
@@ -148,7 +150,7 @@ class DCHealth:
         """
         license_info = {}
 
-        print(f"\nINFO: GETTING LICENSE PAGE FROM SERVER")
+        logger.info(f"\nINFO: GETTING LICENSE PAGE FROM SERVER")
         if curl_proxy:
             proxy = curl_proxy
         else:
@@ -165,12 +167,12 @@ class DCHealth:
             if len(actions) > 0:
                 user_info = actions[1]
                 state = user_info.get("state")
-                print(f"INFO: Request state: {state}")
+                logger.info(f"INFO: Request state: {state}")
                 if state == "ERROR":
                     errors = user_info.get("error")
                     if len(errors) > 0:
                         error = errors[0]
-                        print(f"ERROR: Request did not complete. DETAILS: {error}")
+                        logger.info(f"ERROR: Request did not complete. DETAILS: {error}")
                         return license_info
 
                 returnValue = user_info.get("returnValue")
@@ -229,15 +231,15 @@ class DCHealth:
                 if len(actions) > 0:
                     user_info = actions[0]
                     state = user_info.get("state")
-                    print(f"INFO: Request state: {state}")
+                    logger.info(f"INFO: Request state: {state}")
                     if state == "ERROR":
                         errors = user_info.get("error")
                         if len(errors) > 0:
                             error = errors[0]
-                            print(f"ERROR: Request did not complete. DETAILS: {error}")
+                            logger.info(f"ERROR: Request did not complete. DETAILS: {error}")
                             error_state = True
                     else:
-                        print(f"INFO: STATE: {state}")  # Success state
+                        logger.info(f"INFO: STATE: {state}")  # Success state
                         returnValue = user_info.get("returnValue")  # List of the results of the query
                         if len(returnValue) > 0:
                             # Iterate through all the return values on this case
@@ -248,10 +250,10 @@ class DCHealth:
                                     key = key.replace("__c", "")
                                     license_info[key] = value
                                 licenses_list.append(license_info)
-                                print(json.dumps(license_info, indent=2))
+                                logger.info(json.dumps(license_info, indent=2))
 
-            print(f"INFO: Number of results found after scraping current offset ({offsetCnt}) {len(licenses_list)}")
+            logger.info(f"INFO: Number of results found after scraping current offset ({offsetCnt}) {len(licenses_list)}")
             offsetCnt = offsetCnt + 25
 
-        print(f"\nINFO: Total number of results {offsetCnt}")
+        logger.info(f"\nINFO: Total number of results {offsetCnt}")
         return licenses_list

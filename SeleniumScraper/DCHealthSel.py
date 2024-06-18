@@ -1,6 +1,8 @@
 import re
 from SeleniumScraper.SeleniumPageNavigator import get_chrome_driver, SelemiumPageNavigetor
+from LoggingModule import set_logging
 
+logger = set_logging()
 
 class DCHealthSeleniumScraper:
     SITE_NAME = "DCHealth"

@@ -1,6 +1,8 @@
 import re
 from SeleniumScraper.SeleniumPageNavigator import get_chrome_driver, SelemiumPageNavigetor
+from LoggingModule import set_logging
 
+logger = set_logging()
 
 class ARMedboardSeleniumScraper:
     SITE_NAME = "ARMedBoard"
@@ -114,15 +116,15 @@ class ARMedboardSeleniumScraper:
                     ele = self.navigator.getElementAttributeAsText(xpath=current_result_xpath, attribute_name="href")
                     try:
                         asmb_id = asmb_id_regex.search(ele).group(1) # type: ignore
-                        print(f"INFO: Found ASMB Id: {asmb_id}")
+                        logger.info(f"INFO: Found ASMB Id: {asmb_id}")
                         asmb_id_list.append(asmb_id)
                     except:
-                        print("ERROR: Could not get ASMB Id from element")
+                        logger.info("ERROR: Could not get ASMB Id from element")
 
-                print(f"INFO: Number of results found after scraping current page (page {page + 1}) {len(asmb_id_list)}")
+                logger.info(f"INFO: Number of results found after scraping current page (page {page + 1}) {len(asmb_id_list)}")
 
             # Click on next view
-            print(f"INFO: {len(asmb_id_list)} ASMB ids found so far after scraping all {numpages} pages in current view."
+            logger.info(f"INFO: {len(asmb_id_list)} ASMB ids found so far after scraping all {numpages} pages in current view."
                   f"\n\t{asmb_id_list}. Going to next view (set of pages)")
 
             next_view_xpath_base = "(//a[contains(@href, 'ctl00$MainContentPlaceHolder$gvLookup') and contains(text(), '...')])"
